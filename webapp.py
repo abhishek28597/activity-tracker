@@ -61,14 +61,16 @@ def dashboard():
         LIMIT 1
     ''').fetchone()
     
-    # Get recent keystrokes (last 200)
+    # Get recent keystrokes (last 500) - fetch newest first, then reverse for display
     recent_keystrokes = cursor.execute('''
         SELECT timestamp, key_pressed, app_name
         FROM keystroke_log
         WHERE DATE(timestamp) = DATE('now', 'localtime')
-        ORDER BY timestamp ASC
-        LIMIT 200
+        ORDER BY timestamp DESC
+        LIMIT 500
     ''').fetchall()
+    # Reverse to display in chronological order (oldest to newest for stream readability)
+    recent_keystrokes = list(reversed(recent_keystrokes))
     
     conn.close()
     
