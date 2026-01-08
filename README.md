@@ -9,7 +9,11 @@ A macOS productivity tool that tracks your keyboard and mouse activity across ap
 - **Real-time Keystroke Logging** - Captures every keystroke with timestamp and active application
 - **Mouse Click Tracking** - Counts mouse clicks throughout the day
 - **Per-Application Stats** - See which apps you use most based on actual typing activity
-- **Keystroke Stream Visualization** - Visual display of your recent keystrokes grouped by application
+- **Activity Timeline Chart** - Visual area chart showing hourly keystroke activity throughout the day
+- **Keystroke Stream Modal** - View your recent keystrokes (up to 500) grouped by application in a popup modal
+- **Historical Data Viewing** - Date picker to view activity from any previous day
+- **Export to Text** - Export keystrokes as reconstructed readable text, grouped by 30-minute intervals
+- **LLM Refined Export** - Use Groq's Llama 3.3 70B to refine exported text into clean, structured format with timestamps and app context
 - **Daily Metrics** - Total keystrokes, clicks, active hours, and peak productivity hour
 - **Beautiful Dashboard** - Dark-themed web UI with real-time data visualization
 
@@ -35,10 +39,22 @@ A macOS productivity tool that tracks your keyboard and mouse activity across ap
 
 3. Install dependencies:
    ```bash
-   pip install flask pynput pyobjc-framework-Cocoa
+   pip install -r requirements.txt
+   ```
+   
+   Or manually:
+   ```bash
+   pip install Flask pynput pyobjc-framework-Cocoa groq python-dotenv
    ```
 
-4. Grant Accessibility permissions:
+4. Set up environment variables (optional, for LLM refinement):
+   ```bash
+   # Create .env file with your Groq API key
+   echo "GROQ_API_KEY=your_api_key_here" > .env
+   ```
+   Get your API key from [Groq Console](https://console.groq.com/)
+
+5. Grant Accessibility permissions:
    - Go to **System Preferences → Security & Privacy → Privacy → Accessibility**
    - Add your terminal app (Terminal, iTerm, or IDE)
 
@@ -76,11 +92,16 @@ Open your browser to [http://localhost:5000](http://localhost:5000)
 ### Web Dashboard (`webapp.py`)
 
 - Flask-based web server
-- Queries SQLite database for today's activity
+- Queries SQLite database for selected date's activity
 - Displays:
   - **Metrics cards**: Total keystrokes, clicks, active hours, peak hour
-  - **Keystroke stream**: Recent keystrokes grouped by application
+  - **Activity Timeline**: Area chart showing hourly keystroke distribution
   - **Top Apps**: Applications ranked by activity time
+  - **Keystroke Stream Modal**: Popup with recent keystrokes grouped by application
+- **API Endpoints**:
+  - `GET /` - Main dashboard with date parameter support (`?date=YYYY-MM-DD`)
+  - `GET /api/export-keystrokes?date=YYYY-MM-DD&refine=false` - Export keystrokes as downloadable text file
+  - `GET /api/export-keystrokes?date=YYYY-MM-DD&refine=true` - Export keystrokes refined by LLM (requires GROQ_API_KEY in .env)
 
 ## Database Schema
 
@@ -107,6 +128,9 @@ Open your browser to [http://localhost:5000](http://localhost:5000)
 activity-tracker/
 ├── tracker.py          # Background activity monitor
 ├── webapp.py           # Flask web dashboard
+├── llm_refiner.py      # LLM text refinement pipeline (Groq)
+├── requirements.txt    # Python dependencies
+├── .env                # Environment variables (GROQ_API_KEY)
 ├── activity.db         # SQLite database (auto-created)
 ├── templates/
 │   └── dashboard.html  # Dashboard UI template

@@ -2,6 +2,12 @@ from flask import Flask, render_template, request, Response
 import sqlite3
 from datetime import datetime, date, timedelta
 import json
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+from llm_refiner import refine_text
 
 app = Flask(__name__)
 
@@ -142,8 +148,14 @@ def dashboard():
 
 @app.route('/api/export-keystrokes')
 def export_keystrokes():
-    """Export keystrokes for a given date as a text file."""
+    """Export keystrokes for a given date as a text file.
+    
+    Query params:
+        date: Date in YYYY-MM-DD format (required)
+        refine: If 'true', pass through LLM refinement pipeline (optional)
+    """
     date_str = request.args.get('date')
+    refine = request.args.get('refine', 'false').lower() == 'true'
     
     if not date_str:
         return Response("Missing date parameter", status=400)
@@ -208,7 +220,13 @@ def export_keystrokes():
         output_lines.append("")  # Empty line between intervals
     
     content = '\n'.join(output_lines)
-    filename = f"{export_date.strftime('%Y-%m-%d')}_key_stroke.txt"
+    
+    # If refinement is requested, pass through LLM
+    if refine:
+        content = refine_text(content)
+        filename = f"{export_date.strftime('%Y-%m-%d')}_refined_key_stroke.txt"
+    else:
+        filename = f"{export_date.strftime('%Y-%m-%d')}_key_stroke.txt"
     
     return Response(
         content,

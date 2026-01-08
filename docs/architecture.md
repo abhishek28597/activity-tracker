@@ -179,21 +179,111 @@ Main Thread
 
 ---
 
+## LLM Refiner (`llm_refiner.py`)
+
+### Purpose
+
+Provides text refinement capabilities using Groq's Llama 3.3 70B model to transform raw keystroke logs into clean, structured, grammatically correct text.
+
+### Function: `refine_text(raw_text: str) -> str`
+
+**Input:**
+- Raw text reconstructed from keystrokes (with timestamps and intervals)
+
+**Process:**
+1. Loads `GROQ_API_KEY` from environment variables (via `python-dotenv`)
+2. Sends text to Groq API with system prompt instructing format:
+   ```
+   [timestamp]
+   [app name]
+   Refined text...
+   ```
+3. LLM processes and returns refined text
+
+**Output:**
+- Clean, structured text with timestamps, app names, and refined content
+- Falls back to original text if API call fails
+
+**Configuration:**
+- Model: `llama-3.3-70b-versatile`
+- Temperature: `0.3` (for consistent formatting)
+- Max tokens: `4096`
+
+**Error Handling:**
+- If API call fails, returns original text with error message prepended
+- Logs errors to console for debugging
+
+---
+
 ## Web Dashboard (`webapp.py`)
 
 ### Flask Routes
 
 #### `GET /` — Dashboard
 
-Returns the main dashboard HTML page with today's activity data.
+Returns the main dashboard HTML page with activity data for a selected date.
+
+**Query Parameters:**
+- `date` (optional): Date in `YYYY-MM-DD` format. Defaults to today.
+
+#### `GET /api/export-keystrokes` — Export Keystrokes
+
+Exports keystrokes as a downloadable text file with reconstructed readable text.
+
+**Query Parameters:**
+- `date` (required): Date in `YYYY-MM-DD` format
+- `refine` (optional): If `true`, passes text through LLM refinement pipeline. Default: `false`
+
+**Response:** 
+- Content-Type: `text/plain`
+- Content-Disposition: `attachment; filename="{date}_key_stroke.txt"` or `"{date}_refined_key_stroke.txt"` (if refined)
+
+**Export Format (Standard):**
+```
+8 Jan 2026 at 1:00 PM
+reconstructed text from keystrokes...
+
+8 Jan 2026 at 1:30 PM  
+more reconstructed text...
+```
+
+**Export Format (Refined):**
+```
+[8 Jan 2026 at 1:00 PM]
+[App Name]
+Refined, grammatically correct text with proper formatting.
+
+[8 Jan 2026 at 1:30 PM]
+[Another App]
+More refined content...
+```
+
+**Text Reconstruction Logic:**
+- Character keys are concatenated into words
+- `backspace` removes the previous character
+- `space` becomes a space character
+- `enter` becomes a newline
+- Modifier keys (shift, ctrl, alt, cmd) are ignored
+- Navigation keys (arrows, home, end, etc.) are ignored
+- Keystrokes are grouped into 30-minute intervals
+- Empty intervals are skipped
+
+**LLM Refinement (when `refine=true`):**
+- Uses Groq's Llama 3.3 70B model via `llm_refiner.py`
+- Requires `GROQ_API_KEY` environment variable
+- Fixes typos and grammatical errors
+- Groups related content by app and timestamp
+- Formats commands and code snippets appropriately
+- Removes gibberish or accidental keystrokes
+- Outputs structured format: `[timestamp]\n[app]\nrefined text`
 
 ### Data Queries
 
-**Hourly Activity:**
+**Hourly Activity (for Activity Timeline chart):**
 ```sql
 SELECT hour, SUM(keystrokes), SUM(clicks)
 FROM activity_log
-WHERE DATE(timestamp) = DATE('now', 'localtime')
+WHERE DATE(timestamp) = ?  -- selected_date parameter
 GROUP BY hour
 ORDER BY hour
 ```
@@ -202,20 +292,21 @@ ORDER BY hour
 ```sql
 SELECT app_name, SUM(keystrokes), SUM(clicks), COUNT(*) as minutes_active
 FROM activity_log
-WHERE DATE(timestamp) = DATE('now', 'localtime')
+WHERE DATE(timestamp) = ?  -- selected_date parameter
 GROUP BY app_name
 ORDER BY minutes_active DESC
 LIMIT 10
 ```
 
-**Recent Keystrokes:**
+**Recent Keystrokes (for modal, newest 500):**
 ```sql
 SELECT timestamp, key_pressed, app_name
 FROM keystroke_log
-WHERE DATE(timestamp) = DATE('now', 'localtime')
-ORDER BY timestamp ASC
-LIMIT 200
+WHERE DATE(timestamp) = ?  -- selected_date parameter
+ORDER BY timestamp DESC
+LIMIT 500
 ```
+*Note: Results are reversed in Python to display oldest-to-newest in the UI*
 
 ### Template Rendering
 
@@ -224,12 +315,15 @@ Data is passed to `templates/dashboard.html`:
 ```python
 return render_template('dashboard.html',
     hourly_keystrokes=json.dumps(keystrokes_by_hour),
+    hourly_keystrokes_list=keystrokes_by_hour,  # For chart rendering
     hourly_clicks=json.dumps(clicks_by_hour),
     app_usage=app_usage,
     total_activity=total_activity,
     most_productive=most_productive,
     recent_keystrokes=recent_keystrokes,
-    today=today
+    selected_date=selected_date,
+    today=today,
+    is_today=(selected_date == today)
 )
 ```
 
@@ -237,41 +331,95 @@ return render_template('dashboard.html',
 
 ## Dashboard UI (`templates/dashboard.html`)
 
-### Keystroke Stream Visualization
+### Layout Structure
 
-Groups consecutive keystrokes by application:
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Header: [Logo] Activity Tracker    [← Date Picker →] [View Keystrokes] │
+├─────────────────────────────────────────────────────────────┤
+│ Metrics Grid: [Keystrokes] [Clicks] [Active Hours] [Peak Hour]         │
+├────────────────────────────────────┬────────────────────────┤
+│ Activity Timeline (Area Chart)     │ Top Apps               │
+│ - Hourly keystroke visualization   │ - App rankings         │
+│ - Peak indicator                   │ - Keystroke/click counts│
+└────────────────────────────────────┴────────────────────────┘
+```
+
+### Date Picker
+
+Allows viewing historical data:
+- Native HTML date input with max date = today
+- Navigation arrows (← →) for day-by-day browsing
+- "Today" button to jump back to current date
+- URL parameter: `/?date=YYYY-MM-DD`
+
+### Activity Timeline Chart
+
+Pure CSS/SVG area chart showing hourly keystroke distribution:
 
 ```jinja2
-{% for keystroke in recent_keystrokes %}
-    {% if keystroke['app_name'] != current_app.value %}
-        <!-- New app group header -->
-        <div class="keystroke-group">
-            <span class="app-name">{{ keystroke['app_name'] }}</span>
-            <span>{{ keystroke['timestamp'] }}</span>
-        </div>
-    {% endif %}
+<svg class="chart-svg" viewBox="0 0 720 200">
+    <!-- Gradient fill definition -->
+    <defs>
+        <linearGradient id="areaGradient">
+            <stop offset="0%" style="stop-color: #3fb950; stop-opacity: 0.4" />
+            <stop offset="100%" style="stop-color: #3fb950; stop-opacity: 0.05" />
+        </linearGradient>
+    </defs>
     
-    <!-- Key badge with styling based on key type -->
-    {% if key in ['shift', 'ctrl', 'alt', 'cmd'] %}
-        <span class="key modifier">{{ key }}</span>
-    {% elif key in ['enter', 'backspace', 'tab'] %}
-        <span class="key special">{{ key }}</span>
-    {% else %}
-        <span class="key">{{ key }}</span>
-    {% endif %}
-{% endfor %}
+    <!-- Area polygon generated from hourly_keystrokes_list -->
+    <polygon class="chart-area" points="..." />
+    <polyline class="chart-line" points="..." />
+    
+    <!-- Interactive data points with tooltips -->
+    {% for val in hourly_data %}
+        <circle class="chart-dot" cx="..." cy="..." 
+                onmouseenter="showTooltip(...)" />
+    {% endfor %}
+</svg>
 ```
+
+### Keystroke Stream Modal
+
+Triggered by "View Keystrokes" button in header:
+
+```
+┌─────────────────────────────────────────────────┐
+│ ⌨️ Keystroke Stream        [Export ▾] [×]      │
+├─────────────────────────────────────────────────┤
+│ Cursor  2026-01-08 15:35                        │
+│ [h][e][l][l][o][space][w][o][r][l][d][enter]   │
+│                                                 │
+│ Chrome  2026-01-08 15:36                        │
+│ [g][o][o][g][l][e][enter]                      │
+└─────────────────────────────────────────────────┘
+```
+
+**Features:**
+- Backdrop blur overlay
+- Scrollable content (up to 500 keystrokes)
+- Close via × button, Escape key, or clicking outside
+- Export dropdown with date picker
+
+### Export Dropdown
+
+Inside the modal header:
+- Date picker to select export date
+- "Download TXT" button triggers `/api/export-keystrokes`
+- Downloads file: `{date}_key_stroke.txt`
 
 ### Key Styling Classes
 
-- `.key` — Default key appearance
+- `.key` — Default key appearance (dark background)
 - `.key.special` — Blue highlight for Enter, Backspace, Tab, etc.
 - `.key.modifier` — Purple highlight for Shift, Ctrl, Alt, Cmd
-- `.key.space` — Wider badge for spacebar
+- `.key.space` — Wider badge for spacebar (shows ␣)
 
 ---
 
 ## Data Flow Summary
+
+### Activity Tracking Flow
 
 ```
 1. User presses 'H' in Cursor
@@ -291,17 +439,55 @@ Groups consecutive keystrokes by application:
    ├── INSERT each keystroke into keystroke_log
    ├── INSERT app totals into activity_log
    └── Clear buffer and counters
+```
+
+### Dashboard Viewing Flow
+
+```
+5. User opens localhost:5000/?date=2026-01-08
    │
    ▼
-5. User opens localhost:5000
+6. webapp.py queries database for selected date
+   ├── Get activity_log for metrics & hourly chart
+   └── Get keystroke_log for modal stream (newest 500)
    │
    ▼
-6. webapp.py queries database
-   ├── Get today's activity_log for metrics
-   └── Get today's keystroke_log for stream
+7. Render dashboard.html with:
+   ├── Metrics cards
+   ├── Activity Timeline chart (hourly data)
+   ├── Top Apps list
+   └── Keystroke modal (hidden until opened)
+```
+
+### Export Flow
+
+```
+8. User clicks Export → selects date → Download TXT
    │
    ▼
-7. Render dashboard.html with data
+9. GET /api/export-keystrokes?date=2026-01-08
+   │
+   ▼
+10. webapp.py queries keystroke_log for date
+    │
+    ▼
+11. Group keystrokes into 30-minute intervals
+    │
+    ▼
+12. Reconstruct readable text:
+    ├── Concatenate characters
+    ├── Apply backspaces
+    ├── Convert space/enter to whitespace
+    └── Skip modifier/navigation keys
+    │
+    ▼
+13. If refine=true:
+    ├── Pass reconstructed text to llm_refiner.refine_text()
+    ├── LLM processes and returns refined text
+    └── Filename: "2026-01-08_refined_key_stroke.txt"
+    │
+    ▼
+14. Return text file: "2026-01-08_key_stroke.txt" or "2026-01-08_refined_key_stroke.txt"
 ```
 
 ---
@@ -310,8 +496,12 @@ Groups consecutive keystrokes by application:
 
 - **Buffering:** Keystrokes are buffered in memory and batch-inserted every 60 seconds to minimize disk I/O
 - **SQLite:** Good for single-user local storage; no server setup required
-- **Limit 200:** Keystroke stream is limited to prevent UI slowdown with heavy typing
-- **Date filtering:** All queries filter by today's date to keep results fast
+- **Limit 500:** Keystroke stream is limited to newest 500 entries to prevent UI slowdown
+- **Date filtering:** All queries filter by selected date using indexed `DATE(timestamp)` for fast lookups
+- **Modal on-demand:** Keystroke stream is hidden by default (in modal), reducing initial render time
+- **Pure CSS chart:** Activity Timeline uses CSS/SVG without external charting libraries
+- **Lazy export:** Keystroke text reconstruction only happens when export is requested
+- **LLM refinement:** Optional refinement via Groq API (only when `refine=true` parameter is used)
 
 ---
 

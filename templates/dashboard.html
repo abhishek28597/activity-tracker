@@ -528,6 +528,20 @@
             background: #4db8ff;
         }
         
+        .export-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .export-download-btn.refine-btn {
+            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+        }
+        
+        .export-download-btn.refine-btn:hover {
+            background: linear-gradient(135deg, #c084fc 0%, #818cf8 100%);
+        }
+        
         .modal-body {
             max-height: calc(80vh - 80px);
             overflow-y: auto;
@@ -1029,10 +1043,16 @@
                             <input type="date" class="export-date-input" id="export-date" 
                                    value="{{ selected_date }}" 
                                    max="{{ today }}">
-                            <button class="export-download-btn" onclick="downloadExport()">
-                                <span>⬇️</span>
-                                <span>Download TXT</span>
-                            </button>
+                            <div class="export-buttons">
+                                <button class="export-download-btn" onclick="downloadExport(false)">
+                                    <span>⬇️</span>
+                                    <span>Download TXT</span>
+                                </button>
+                                <button class="export-download-btn refine-btn" onclick="downloadExport(true)">
+                                    <span>✨</span>
+                                    <span>Refine & Export</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <button class="modal-close" onclick="closeKeystrokeModal()">&times;</button>
@@ -1115,7 +1135,7 @@
             document.getElementById('export-dropdown').classList.remove('active');
         }
         
-        function downloadExport() {
+        function downloadExport(refine = false) {
             const dateInput = document.getElementById('export-date');
             const selectedDate = dateInput.value;
             
@@ -1125,7 +1145,11 @@
             }
             
             // Trigger download via API
-            window.location.href = '/api/export-keystrokes?date=' + selectedDate;
+            let url = '/api/export-keystrokes?date=' + selectedDate;
+            if (refine) {
+                url += '&refine=true';
+            }
+            window.location.href = url;
             closeExportDropdown();
         }
         
