@@ -14,6 +14,8 @@ A macOS productivity tool that tracks your keyboard and mouse activity across ap
 - **Historical Data Viewing** - Date picker to view activity from any previous day
 - **Export to Text** - Export keystrokes as reconstructed readable text, grouped by 30-minute intervals
 - **LLM Refined Export** - Use Groq's Llama 3.3 70B to refine exported text into clean, structured format with timestamps and app context
+- **Activity Tree Network** - Generate hierarchical activity trees from refined text, visualizing how daily activities aggregate into broader concepts
+- **Interactive Network Graph** - Fullscreen visualization of activity hierarchies with hover tooltips, zoom, and navigation
 - **Daily Metrics** - Total keystrokes, clicks, active hours, and peak productivity hour
 - **Beautiful Dashboard** - Dark-themed web UI with real-time data visualization
 
@@ -78,6 +80,21 @@ python webapp.py
 
 Open your browser to [http://localhost:5000](http://localhost:5000)
 
+### Activity Tree Page
+
+Navigate to the Activity Tree page from the dashboard header or directly at [http://localhost:5000/activity-tree](http://localhost:5000/activity-tree)
+
+**Features:**
+1. **Generate Refined Text** - Create refined keystroke text for a selected date (saved to `data/{date}_refined.txt`)
+2. **Generate Activity Tree** - Build a hierarchical network graph of activities (requires refined text first)
+3. **View Network Graph** - Interactive fullscreen visualization showing:
+   - Layer 1: Individual activities (apps like "Code Editor", "Terminal")
+   - Layer 2+: Aggregated concepts (e.g., "software development", "entertainment")
+   - Final Layer: Day's overall activity theme
+   - Hover tooltips showing full content for each node
+   - Click to zoom/focus on nodes
+   - Pan and zoom controls
+
 ## How It Works
 
 ### Data Collection (`tracker.py`)
@@ -100,8 +117,11 @@ Open your browser to [http://localhost:5000](http://localhost:5000)
   - **Keystroke Stream Modal**: Popup with recent keystrokes grouped by application
 - **API Endpoints**:
   - `GET /` - Main dashboard with date parameter support (`?date=YYYY-MM-DD`)
+  - `GET /activity-tree` - Activity Tree page for generating refined text and activity trees (`?date=YYYY-MM-DD`)
   - `GET /api/export-keystrokes?date=YYYY-MM-DD&refine=false` - Export keystrokes as downloadable text file
   - `GET /api/export-keystrokes?date=YYYY-MM-DD&refine=true` - Export keystrokes refined by LLM (requires GROQ_API_KEY in .env)
+  - `POST /api/generate-refined-text` - Generate and save refined text to data folder (requires `{"date": "YYYY-MM-DD"}`)
+  - `POST /api/generate-activity-tree` - Generate hierarchical activity tree from refined text (requires `{"date": "YYYY-MM-DD"}`)
 
 ## Database Schema
 
@@ -126,19 +146,24 @@ Open your browser to [http://localhost:5000](http://localhost:5000)
 
 ```
 activity-tracker/
-├── tracker.py          # Background activity monitor
-├── webapp.py           # Flask web dashboard
-├── llm_refiner.py      # LLM text refinement pipeline (Groq)
-├── requirements.txt    # Python dependencies
-├── .env                # Environment variables (GROQ_API_KEY)
-├── activity.db         # SQLite database (auto-created)
+├── tracker.py              # Background activity monitor
+├── webapp.py               # Flask web dashboard
+├── llm_refiner.py          # LLM text refinement pipeline (Groq)
+├── activity_network.py     # Activity tree builder (hierarchical concept extraction)
+├── requirements.txt        # Python dependencies
+├── .env                    # Environment variables (GROQ_API_KEY)
+├── activity.db             # SQLite database (auto-created)
+├── data/                   # Generated refined text and tree files
+│   ├── {date}_refined.txt
+│   └── {date}_refined_tree.json
 ├── templates/
-│   └── dashboard.html  # Dashboard UI template
+│   ├── dashboard.html      # Main dashboard UI template
+│   └── activity_tree.html  # Activity Tree page template
 ├── assets/
-│   └── screenshot.png  # Dashboard screenshot
+│   └── screenshot.png      # Dashboard screenshot
 ├── docs/
-│   └── architecture.md # Detailed code documentation
-└── venv/               # Python virtual environment
+│   └── architecture.md     # Detailed code documentation
+└── venv/                   # Python virtual environment
 ```
 
 ## Documentation

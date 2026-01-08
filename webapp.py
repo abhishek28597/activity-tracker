@@ -1,13 +1,15 @@
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, jsonify
 import sqlite3
 from datetime import datetime, date, timedelta
 import json
+import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 from llm_refiner import refine_text
+from activity_network import build_activity_tree, tree_to_dict
 
 app = Flask(__name__)
 
@@ -233,6 +235,201 @@ def export_keystrokes():
         mimetype='text/plain',
         headers={'Content-Disposition': f'attachment; filename="{filename}"'}
     )
+
+@app.route('/activity-tree')
+def activity_tree():
+    """Activity Tree page for generating and viewing refined keystroke text."""
+    # Get date from query parameter, default to today
+    date_str = request.args.get('date')
+    if date_str:
+        try:
+            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = date.today()
+    else:
+        selected_date = date.today()
+    
+    today = date.today()
+    
+    # Check if refined file exists for this date
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    
+    filename = f"{selected_date.strftime('%Y-%m-%d')}_refined.txt"
+    filepath = os.path.join(data_dir, filename)
+    file_exists = os.path.exists(filepath)
+    
+    # If file exists, read its content
+    file_content = None
+    if file_exists:
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+        except Exception as e:
+            file_content = None
+    
+    # Check if tree file exists for this date
+    tree_filename = f"{selected_date.strftime('%Y-%m-%d')}_refined_tree.json"
+    tree_filepath = os.path.join(data_dir, tree_filename)
+    tree_exists = os.path.exists(tree_filepath)
+    
+    # If tree file exists, read its content
+    tree_data = None
+    if tree_exists:
+        try:
+            with open(tree_filepath, 'r', encoding='utf-8') as f:
+                tree_data = json.load(f)
+        except Exception as e:
+            tree_data = None
+    
+    return render_template('activity_tree.html',
+                         selected_date=selected_date,
+                         today=today,
+                         is_today=(selected_date == today),
+                         file_exists=file_exists,
+                         file_content=file_content,
+                         filename=filename,
+                         tree_exists=tree_exists,
+                         tree_data=tree_data,
+                         tree_filename=tree_filename)
+
+@app.route('/api/generate-refined-text', methods=['POST'])
+def generate_refined_text():
+    """Generate refined text and save it to data folder."""
+    data = request.get_json()
+    date_str = data.get('date')
+    
+    if not date_str:
+        return jsonify({'error': 'Missing date parameter'}), 400
+    
+    try:
+        export_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    # Get keystrokes for the date
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    keystrokes = cursor.execute('''
+        SELECT timestamp, key_pressed, app_name
+        FROM keystroke_log
+        WHERE DATE(timestamp) = ?
+        ORDER BY timestamp ASC
+    ''', (export_date.isoformat(),)).fetchall()
+    
+    conn.close()
+    
+    if not keystrokes:
+        return jsonify({'error': f'No keystrokes recorded for {export_date.strftime("%Y-%m-%d")}'}), 404
+    
+    # Group keystrokes into 30-minute intervals
+    intervals = {}
+    for ks in keystrokes:
+        ts = datetime.fromisoformat(ks['timestamp'])
+        minute_slot = (ts.minute // 30) * 30
+        interval_start = ts.replace(minute=minute_slot, second=0, microsecond=0)
+        interval_key = interval_start.strftime('%Y-%m-%d %H:%M')
+        
+        if interval_key not in intervals:
+            intervals[interval_key] = []
+        intervals[interval_key].append(ks['key_pressed'])
+    
+    # Build the output text
+    output_lines = []
+    for interval_key in sorted(intervals.keys()):
+        keys = intervals[interval_key]
+        reconstructed = reconstruct_text(keys)
+        
+        if not reconstructed.strip():
+            continue
+        
+        interval_dt = datetime.strptime(interval_key, '%Y-%m-%d %H:%M')
+        formatted_time = interval_dt.strftime('%-d %b %Y at %-I:%M %p')
+        
+        output_lines.append(f"{formatted_time}")
+        output_lines.append(reconstructed)
+        output_lines.append("")
+    
+    content = '\n'.join(output_lines)
+    
+    # Refine the content
+    try:
+        refined_content = refine_text(content)
+    except Exception as e:
+        return jsonify({'error': f'Refinement failed: {str(e)}'}), 500
+    
+    # Save to data folder
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    
+    filename = f"{export_date.strftime('%Y-%m-%d')}_refined.txt"
+    filepath = os.path.join(data_dir, filename)
+    
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(refined_content)
+    except Exception as e:
+        return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
+    
+    return jsonify({
+        'success': True,
+        'content': refined_content,
+        'filename': filename
+    })
+
+@app.route('/api/generate-activity-tree', methods=['POST'])
+def generate_activity_tree():
+    """Generate activity tree from refined text and save to data folder."""
+    data = request.get_json()
+    date_str = data.get('date')
+    
+    if not date_str:
+        return jsonify({'error': 'Missing date parameter'}), 400
+    
+    try:
+        export_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    # Check if refined text file exists
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    
+    refined_filename = f"{export_date.strftime('%Y-%m-%d')}_refined.txt"
+    refined_filepath = os.path.join(data_dir, refined_filename)
+    
+    if not os.path.exists(refined_filepath):
+        return jsonify({'error': f'Refined text file not found for {date_str}. Please generate refined text first.'}), 404
+    
+    try:
+        # Build the activity tree
+        nodes = build_activity_tree(refined_filepath)
+        
+        if not nodes:
+            return jsonify({'error': 'Failed to build activity tree. No activities found.'}), 500
+        
+        # Convert to JSON-serializable dict (with full content for API)
+        tree_data = tree_to_dict(nodes, truncate_content=False)
+        
+        # Save to data folder
+        tree_filename = f"{export_date.strftime('%Y-%m-%d')}_refined_tree.json"
+        tree_filepath = os.path.join(data_dir, tree_filename)
+        
+        with open(tree_filepath, 'w', encoding='utf-8') as f:
+            json.dump(tree_data, f, indent=2, ensure_ascii=False)
+        
+        return jsonify({
+            'success': True,
+            'tree': tree_data,
+            'filename': tree_filename
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate activity tree: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

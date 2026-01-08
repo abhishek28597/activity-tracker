@@ -4,10 +4,11 @@ This document explains how the Activity Tracker works under the hood.
 
 ## Overview
 
-The Activity Tracker consists of two main components:
+The Activity Tracker consists of three main components:
 
 1. **Tracker (`tracker.py`)** - Background daemon that monitors keyboard/mouse activity
 2. **Web Dashboard (`webapp.py`)** - Flask server that displays activity data
+3. **Activity Network (`activity_network.py`)** - Hierarchical activity tree builder using LLM
 
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
@@ -18,6 +19,19 @@ The Activity Tracker consists of two main components:
         ▼                                            ▼
   Keyboard/Mouse                              Web Dashboard
     Listeners                                 localhost:5000
+                                              │
+                                              ▼
+                                    ┌─────────────────────┐
+                                    │ activity_network.py  │
+                                    │  (LLM tree builder)  │
+                                    └─────────────────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────────┐
+                                    │   data/ folder      │
+                                    │  (refined text &    │
+                                    │   tree JSON files)  │
+                                    └─────────────────────┘
 ```
 
 ---
@@ -215,6 +229,86 @@ Provides text refinement capabilities using Groq's Llama 3.3 70B model to transf
 
 ---
 
+## Activity Network (`activity_network.py`)
+
+### Purpose
+
+Builds hierarchical activity trees from refined keystroke text by:
+1. Identifying unique Layer 1 activities (apps like "Code Editor", "Terminal")
+2. Extracting concepts from each activity using LLM
+3. Recursively aggregating concepts into broader categories
+4. Continuing until reaching a single root node representing the day's overall activity
+
+### Function: `build_activity_tree(file_path: str) -> Dict[str, ActivityNode]`
+
+**Input:**
+- Path to refined text file (from `data/{date}_refined.txt`)
+
+**Process:**
+
+1. **Parse Refined Text** - Extracts activities with timestamps and content
+2. **Identify Layer 1 Activities** - Groups by unique app/activity names
+3. **Extract Concepts** - For each activity, uses LLM to extract 2-4 high-level concepts
+4. **Recursive Aggregation** - Uses LLM to merge concepts into broader categories:
+   - Layer 2: Concepts extracted from activities
+   - Layer 3+: Aggregated broader concepts
+   - Continues until single root node (Day's Activity)
+5. **Build Tree Structure** - Creates parent-child relationships between nodes
+
+**Output:**
+- Dictionary of `ActivityNode` objects with hierarchical relationships
+- Each node contains: id, label, layer, content, children, parent
+
+### Function: `tree_to_dict(nodes: Dict[str, ActivityNode]) -> Dict`
+
+Converts activity tree nodes to JSON-serializable format for API responses and file storage.
+
+### LLM Pipeline
+
+**Concept Extraction (`extract_activity_concepts_llm`):**
+- Model: `llama-3.3-70b-versatile`
+- Temperature: `0.5`
+- Extracts 2-4 concepts per activity
+- Returns JSON array of concept strings
+
+**Concept Aggregation (`aggregate_activities_llm`):**
+- Aggregates multiple concepts into roughly half the count
+- Groups related concepts into broader themes
+- Continues recursively until single concept remains
+
+**Day Activity Generation (`generate_day_activity_llm`):**
+- Synthesizes final layer concepts into one overarching day theme
+- Returns single phrase (3-8 words)
+
+### Data Structure
+
+```python
+@dataclass
+class ActivityNode:
+    id: str              # Unique identifier (e.g., "L1_Code_Editor")
+    label: str           # Display name (e.g., "Code Editor")
+    layer: int           # Hierarchy level (1 = activities, 2+ = concepts)
+    content: str          # Original text content for this node
+    children: List[str]   # IDs of child nodes
+    parent: Optional[str] # ID of parent node (None for root)
+```
+
+### Tree Structure Example
+
+```
+Day's Activity (root)
+    ├── Software Development (Layer 3)
+    │   ├── Code Refactoring (Layer 2)
+    │   │   └── Code Editor (Layer 1)
+    │   └── LLM Integration (Layer 2)
+    │       ├── Code Editor (Layer 1)
+    │       └── Terminal (Layer 1)
+    └── Entertainment (Layer 2)
+        └── Netflix (Layer 1)
+```
+
+---
+
 ## Web Dashboard (`webapp.py`)
 
 ### Flask Routes
@@ -225,6 +319,85 @@ Returns the main dashboard HTML page with activity data for a selected date.
 
 **Query Parameters:**
 - `date` (optional): Date in `YYYY-MM-DD` format. Defaults to today.
+
+#### `GET /activity-tree` — Activity Tree Page
+
+Returns the Activity Tree page for generating refined text and activity trees.
+
+**Query Parameters:**
+- `date` (optional): Date in `YYYY-MM-DD` format. Defaults to today.
+
+**Response:**
+- Renders `templates/activity_tree.html` with:
+  - Refined text file status
+  - Activity tree file status
+  - Generate buttons for both features
+
+#### `POST /api/generate-refined-text` — Generate Refined Text
+
+Generates refined keystroke text and saves it to the data folder.
+
+**Request Body:**
+```json
+{
+  "date": "2026-01-08"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "content": "refined text content...",
+  "filename": "2026-01-08_refined.txt"
+}
+```
+
+**Process:**
+1. Queries `keystroke_log` for the specified date
+2. Groups keystrokes into 30-minute intervals
+3. Reconstructs readable text
+4. Passes through LLM refinement pipeline
+5. Saves to `data/{date}_refined.txt`
+
+#### `POST /api/generate-activity-tree` — Generate Activity Tree
+
+Generates hierarchical activity tree from refined text.
+
+**Request Body:**
+```json
+{
+  "date": "2026-01-08"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "tree": {
+    "nodes": [
+      {
+        "id": "L1_Code_Editor",
+        "label": "Code Editor",
+        "layer": 1,
+        "content": "...",
+        "children": [],
+        "parent": "L2_llm_integration"
+      },
+      ...
+    ]
+  },
+  "filename": "2026-01-08_refined_tree.json"
+}
+```
+
+**Process:**
+1. Checks if refined text file exists for the date
+2. Calls `activity_network.build_activity_tree()` with file path
+3. Converts tree to JSON format
+4. Saves to `data/{date}_refined_tree.json`
+5. Returns tree data for immediate visualization
 
 #### `GET /api/export-keystrokes` — Export Keystrokes
 
@@ -325,6 +498,68 @@ return render_template('dashboard.html',
     today=today,
     is_today=(selected_date == today)
 )
+```
+
+---
+
+## Activity Tree UI (`templates/activity_tree.html`)
+
+### Layout Structure
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Header: [🌳] Activity Tree    [← Date Picker →] [Back to Dashboard] │
+├─────────────────────────────────────────────────────────────┤
+│ Generate Refined Text Section                               │
+│ [✨ Generate Refined Text]                                  │
+│ [📄 File Status: 2026-01-08_refined.txt] [View Content]    │
+├─────────────────────────────────────────────────────────────┤
+│ Generate Activity Tree Section                              │
+│ [🌳 Generate Activity Tree]                                 │
+│ [🌳 Tree Status: 2026-01-08_refined_tree.json] [View Tree]  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Network Graph Modal
+
+Fullscreen modal for interactive activity tree visualization:
+
+**Features:**
+- **vis-network Library** - Hierarchical graph layout (top to bottom)
+- **Node Types:**
+  - Layer 1 (Activities): Green boxes (e.g., "Code Editor", "Terminal")
+  - Layer 2 (Concepts): Blue diamonds (e.g., "software development")
+  - Layer 3+ (Higher Concepts): Purple diamonds
+  - Day Activity (Root): Orange/gold ellipse
+- **Interactions:**
+  - Hover: Shows tooltip with full node content
+  - Click: Zooms/focuses on selected node
+  - Pan: Drag to move view
+  - Zoom: Mouse wheel or pinch
+  - Reset View: Button to fit entire tree
+- **Layout:** Hierarchical (UD - Up-Down) with automatic spacing
+
+**Graph Rendering:**
+```javascript
+// Convert tree JSON to vis-network format
+const nodes = treeData.nodes.map(node => ({
+    id: node.id,
+    label: node.label,
+    level: node.layer,
+    color: getColorByLayer(node.layer),
+    shape: getShapeByLayer(node.layer),
+    title: node.content  // For tooltip
+}));
+
+// Create edges from parent-child relationships
+const edges = [];
+treeData.nodes.forEach(node => {
+    if (node.children) {
+        node.children.forEach(childId => {
+            edges.push({ from: node.id, to: childId });
+        });
+    }
+});
 ```
 
 ---
@@ -490,6 +725,60 @@ Inside the modal header:
 14. Return text file: "2026-01-08_key_stroke.txt" or "2026-01-08_refined_key_stroke.txt"
 ```
 
+### Activity Tree Generation Flow
+
+```
+15. User navigates to /activity-tree?date=2026-01-08
+    │
+    ▼
+16. User clicks "Generate Refined Text"
+    │
+    ▼
+17. POST /api/generate-refined-text with {"date": "2026-01-08"}
+    │
+    ▼
+18. webapp.py:
+    ├── Queries keystroke_log for date
+    ├── Groups into 30-minute intervals
+    ├── Reconstructs text
+    ├── Passes through llm_refiner.refine_text()
+    └── Saves to data/2026-01-08_refined.txt
+    │
+    ▼
+19. Page reloads, shows refined file status
+    │
+    ▼
+20. User clicks "Generate Activity Tree"
+    │
+    ▼
+21. POST /api/generate-activity-tree with {"date": "2026-01-08"}
+    │
+    ▼
+22. webapp.py:
+    ├── Checks if data/2026-01-08_refined.txt exists
+    ├── Calls activity_network.build_activity_tree()
+    │   ├── Parses refined text
+    │   ├── Identifies Layer 1 activities
+    │   ├── Extracts concepts via LLM (multiple calls)
+    │   ├── Recursively aggregates concepts (multiple calls)
+    │   └── Generates day activity (final LLM call)
+    ├── Converts tree to JSON
+    └── Saves to data/2026-01-08_refined_tree.json
+    │
+    ▼
+23. Returns tree JSON to frontend
+    │
+    ▼
+24. User clicks "View Tree"
+    │
+    ▼
+25. Frontend renders vis-network graph:
+    ├── Converts tree JSON to vis-network format
+    ├── Creates nodes with colors/shapes by layer
+    ├── Creates edges from parent-child relationships
+    └── Displays in fullscreen modal with interactions
+```
+
 ---
 
 ## Performance Considerations
@@ -502,6 +791,9 @@ Inside the modal header:
 - **Pure CSS chart:** Activity Timeline uses CSS/SVG without external charting libraries
 - **Lazy export:** Keystroke text reconstruction only happens when export is requested
 - **LLM refinement:** Optional refinement via Groq API (only when `refine=true` parameter is used)
+- **Activity Tree Generation:** Can take 30-60 seconds due to multiple LLM calls (concept extraction + aggregation). Loading indicators shown during generation
+- **Tree Caching:** Generated trees are saved to JSON files, avoiding regeneration on page reload
+- **vis-network Performance:** Hierarchical layout with physics disabled for faster rendering of large trees
 
 ---
 

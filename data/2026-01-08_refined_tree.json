@@ -1,0 +1,309 @@
+{
+  "nodes": [
+    {
+      "id": "L1_Cricbuzz",
+      "label": "Cricbuzz",
+      "layer": 1,
+      "content": "8 Jan 2026 at 12:30 AM\nThis was fun, thanks. The provided Python script works just fine.",
+      "children": [],
+      "parent": "L2_python_script"
+    },
+    {
+      "id": "L2_python_script",
+      "label": "python script",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Cricbuzz"
+      ],
+      "parent": "L3_software_development"
+    },
+    {
+      "id": "L2_user_feedback",
+      "label": "user feedback",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Cricbuzz"
+      ],
+      "parent": "L3_user_interaction"
+    },
+    {
+      "id": "L2_activity_evaluation",
+      "label": "activity evaluation",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Cricbuzz"
+      ],
+      "parent": "L3_activity_monitoring"
+    },
+    {
+      "id": "L1_Code_Editor",
+      "label": "Code Editor",
+      "layer": 1,
+      "content": "8 Jan 2026 at 1:00 AM\nOkay, let me test this and see how it works. You should create a README.md for this repository that explains the functioning of the code. Also, create a folder called \"docs\" to store explanations of how the code works.\nAdd the app screenshot to the README.md file as well. Move the screenshot.png into an \"assets\" folder to keep the code clean.\nWhat is the schema of the database where the data is stored?\nAdd this to a folder called \"docs\" and put an explanation of how the code works.\nThe GitHub repository is: activity-tracker. Push the code here and make sure to create a .gitignore to ensure the virtual environment is not getting pushed.\nGit commands:\ngit add .\ngit commit -m \"fix: updated dashboard image\"\ngit push origin main\nSomehow, my latest keystrokes in the terminal haven't been logged. Can you check the database and see if they are being stored correctly but not displayed on the UI keystroke stream?\n\n8 Jan 2026 at 1:30 AM\nI checked, and it is working fine. Can you show more keystroke logs like the modal is scrollable, so I can scroll and see more than just 200? Maybe 500?\nGit commands:\ngit add .\ngit commit -m \"fix: UI and SQL glitches\"\ngit push origin\n\n8 Jan 2026 at 3:00 PM\nWhat is the peak hour that is shown on the dashboard? How is that calculated?\nGot it - how does the data thing work? Like tomorrow, when the data changes, would the older data be deleted from the database? Or would you have a SQL filter to fetch from the current day?\nAdd the ability to filter the view based on date. Currently, the date is hard-set, and I must have an option to update the date, and it should show me data for that day. If no data is available for that day, it should show \"no data available for the date\".\nI want the keystroke stream to be conditionally visible based on the user input - so maybe it can be collapsable or present somewhere on the top as a button, and when the user clicks on it, it just pops up as a modal and can be closed.\nIn that space for keystrokes, I want a simple visualization of a time vs hour of the day keystrokes. It can be in intervals of hours, which looks better.\nRefer to Karpathy's repositories.\n\n8 Jan 2026 at 3:30 PM\nThis is great - now I need a small feature addition.\nIn the keystrokes panel, I need an \"export\" button that simply exports the keystrokes into a txt file. Now, clicking on export, it will ask for the date of export needed, and it can have the same calendar option as the main page.\nUse that, and as the user selects the date, it should query from the database and export those keystrokes in a txt file.\nThe format of the txt file should be:\n```\nccvzcv....\n```\nAnd it can be aggregated at a larger interval, say every 30 minutes or so.\nGit commands:\ngit add .\ngit commit -m \"feat:visualise and export\"\ngit push origin main\n\n8 Jan 2026 at 5:30 PM\nIt generates this type of graph. VERY DIFFICULT TO COMPREHEND - I WANT IT TO BE HIERARCHICAL - take for reference @thought_tree.\nTrying out a bit of UI brilliance here - is there a way if I click on a particular node, it zooms into that node on the graph directly and highlights the nodes and edges it connects to lead to the final day?\nIt would be very interactive and look great - further clicking elsewhere or reset will zoom out to normal view.\nThis is good - a few minor changes:\n1) Clicking elsewhere should not reset it - only clicking on reset should reset it.\n2) Even thoughts should be clickable, not just nodes - show how thoughts traverse to the final day concept.\nThis graph looks amazing - would there be a way to view this in full screen where everything else disappears, and it's just this graph in full screen?\nI am finding it tough to drag the graph and view other parts, and in full-screen mode, the zoom-in button is not visible; hence, I am not able to zoom into the thought like I should be able to left-click my mouse, hold, and drag to view different parts of the graph.\n\n8 Jan 2026 at 10:30 PM\nUpdate the architecture in the README to reflect this change.\nThis is great... similar to export, I want you to add another small button next to it - that says \"refine and export\".\nWhat this would do is - it would take the final text and right before exporting it to a txt file, it would pass it through an LLM refiner pipeline.\nThe LLM refiner pipeline is pretty simple - it will take the raw text and refine the entire text into a more refined format.\nFor this refinement pipeline, use the Groq LLM client.\nCreate a llm_refiner.py file that acts as the refinement pipeline, and the same API used to export the txt file can have a flag - if refinement is needed, then it will conditionally pass through the refiner and then export the text file.\nMake sure you create an env file, and the Groq API is picked from the env file.\n\n8 Jan 2026 at 11:00 PM\nI need to design another sub-page for this dashboard - a button on the top \"activity tree\".\nIt should redirect me to a newer page where the user gets to select the date range similar to the main page, and then click on \"generate refined text\" - it should show the output of the API with refinement - except for the fact that it doesn't export it into a txt file but shows it on a scrollable screen and stores it in the codebase in a data folder with the date_refined as the filename.\nThere should always be a button to navigate back from that page to the main page.\nWhat is this red bar at the bottom indicating?\nThis is fine... now I need you to come up with a feature in the same activity-tree page.\nIt is like \"generate refined text\" - there should be a button \"generate activity network graph\".\nAnd it should generate the activity network graph.\nHere is the logic behind the activity network graph:\n1) Consume the refined text output and identify the unique activities (layer 1 activities).\nThen aggregate these activities into level 2 activities to form larger activity concepts.\nActivity 1, Activity 2, Activity 3, and so on, until it reaches a single node.\nFrom a code logic standpoint, it might look like - LLM pipeline to identify activities, create L1 nodes, next use these activities to create L2 nodes.\nActivity aggregation pipeline - where it consumes just activities and aggregates them into larger groups and so on - runs concurrently until you are able to aggregate to one final activity.\nWrite the Python script for this.\n\n8 Jan 2026 at 11:30 PM\nThis is good - now repurpose this same script as a service and create an API - generate activity tree endpoint - and that renders this hierarchical tree JSON on the UI.\nThis button needs to be present in the activity tree page - right after the \"generate refined text\" is done - there should be this option to generate the tree, and clicking on it should generate this tree JSON - same way it does now, and then nicely render this on the frontend dashboard on the UI.\nIt can also have a full-screen mode so that I can navigate to each node and see - and on hovering over each node, it should show the full text of that.\nBasically, creating an activity network graph to better understand my day.\nI see a lot of blue nodes that are level 1 nodes, and they are not stemming from any parent activity - how is that possible?",
+      "children": [],
+      "parent": "L2_code_development"
+    },
+    {
+      "id": "L2_code_development",
+      "label": "code development",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Code_Editor"
+      ],
+      "parent": "L3_software_development"
+    },
+    {
+      "id": "L2_activity_tracking",
+      "label": "activity tracking",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Code_Editor"
+      ],
+      "parent": "L3_activity_monitoring"
+    },
+    {
+      "id": "L2_data_visualization",
+      "label": "data visualization",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Code_Editor"
+      ],
+      "parent": "L3_data_analysis"
+    },
+    {
+      "id": "L2_api_integration",
+      "label": "api integration",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Code_Editor",
+        "L1_Terminal"
+      ],
+      "parent": "L3_tool_integration"
+    },
+    {
+      "id": "L1_Netflix",
+      "label": "Netflix",
+      "layer": 1,
+      "content": "8 Jan 2026 at 2:30 PM\nYou, Netflix, Vestappen documentary, Suits.",
+      "children": [],
+      "parent": "L2_streaming_service"
+    },
+    {
+      "id": "L2_streaming_service",
+      "label": "streaming service",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Netflix"
+      ],
+      "parent": "L3_media_consumption"
+    },
+    {
+      "id": "L2_documentary_viewing",
+      "label": "documentary viewing",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Netflix"
+      ],
+      "parent": "L3_media_consumption"
+    },
+    {
+      "id": "L2_tv_show",
+      "label": "tv show",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Netflix"
+      ],
+      "parent": "L3_media_consumption"
+    },
+    {
+      "id": "L1_Terminal",
+      "label": "Terminal",
+      "layer": 1,
+      "content": "8 Jan 2026 at 5:00 PM\nI have been logging my keystrokes throughout the day and did a bit of post-processing, then rendered it into a txt file.\nI want to build a small LLM-based analysis tool that can analyze this and return me some key insights or metrics. Suggest cool app ideas.\nI have this very loose idea that all the thoughts in a day can be mapped to some larger concepts.\nEvery thought can have some concepts associated with it.\nThose concepts can be aggregated to create a larger conceptual layer, and so on, hierarchically, until one reaches the single concept - that is the concept of the day.\nDo this via recursive LLM calls:\n1) Consume all thoughts and per thought generate high-level concepts.\n2) Then use another LLM call to aggregate concepts into broader or larger concepts.\nAnd do this until you reach a single large concept.\nConcept is basically some key patterns, thought vectors, or thought concepts that are embedded in a single raw thought text.\nWrite the script to build the entire thought graph like shown in the figure using some package and display it in an image.\nTake reference for making LLM calls and displaying the result.\nWrite this entire code in a script - tree.py.\nPython commands:\npython tree.py data/2026-01-05.json\n\n8 Jan 2026 at 6:00 PM\nI am adding a new Dropbox API key - still throws an error that it has expired. Can you check if some issue with another backend running somewhere or something?\nnpm run dev",
+      "children": [],
+      "parent": "L2_keystroke_analysis"
+    },
+    {
+      "id": "L2_keystroke_analysis",
+      "label": "keystroke analysis",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Terminal"
+      ],
+      "parent": "L3_data_analysis"
+    },
+    {
+      "id": "L2_llm_tool_development",
+      "label": "llm tool development",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Terminal"
+      ],
+      "parent": "L3_software_development"
+    },
+    {
+      "id": "L2_concept_mapping",
+      "label": "concept mapping",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Terminal"
+      ],
+      "parent": "L3_data_analysis"
+    },
+    {
+      "id": "L3_software_development",
+      "label": "software development",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_python_script",
+        "L2_llm_tool_development",
+        "L2_code_development"
+      ],
+      "parent": "L4_productive_work_activities"
+    },
+    {
+      "id": "L3_data_analysis",
+      "label": "data analysis",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_keystroke_analysis",
+        "L2_data_visualization",
+        "L2_concept_mapping"
+      ],
+      "parent": "L4_productive_work_activities"
+    },
+    {
+      "id": "L3_user_interaction",
+      "label": "user interaction",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_user_feedback"
+      ],
+      "parent": "L4_productive_work_activities"
+    },
+    {
+      "id": "L3_media_consumption",
+      "label": "media consumption",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_streaming_service",
+        "L2_tv_show",
+        "L2_documentary_viewing"
+      ],
+      "parent": "L4_digital_media_consumption"
+    },
+    {
+      "id": "L3_activity_monitoring",
+      "label": "activity monitoring",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_activity_evaluation",
+        "L2_activity_tracking"
+      ],
+      "parent": "L4_system_management_tasks"
+    },
+    {
+      "id": "L3_tool_integration",
+      "label": "tool integration",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_api_integration"
+      ],
+      "parent": "L4_productive_work_activities"
+    },
+    {
+      "id": "L4_productive_work_activities",
+      "label": "productive work activities",
+      "layer": 4,
+      "content": "",
+      "children": [
+        "L3_software_development",
+        "L3_data_analysis",
+        "L3_user_interaction",
+        "L3_tool_integration"
+      ],
+      "parent": "L5_computer_usage"
+    },
+    {
+      "id": "L4_digital_media_consumption",
+      "label": "digital media consumption",
+      "layer": 4,
+      "content": "",
+      "children": [
+        "L3_media_consumption"
+      ],
+      "parent": "L5_computer_usage"
+    },
+    {
+      "id": "L4_system_management_tasks",
+      "label": "system management tasks",
+      "layer": 4,
+      "content": "",
+      "children": [
+        "L3_activity_monitoring"
+      ],
+      "parent": "L5_system_maintenance"
+    },
+    {
+      "id": "L5_computer_usage",
+      "label": "computer usage",
+      "layer": 5,
+      "content": "",
+      "children": [
+        "L4_productive_work_activities",
+        "L4_digital_media_consumption"
+      ],
+      "parent": "L6_computer_system_management"
+    },
+    {
+      "id": "L5_system_maintenance",
+      "label": "system maintenance",
+      "layer": 5,
+      "content": "",
+      "children": [
+        "L4_system_management_tasks"
+      ],
+      "parent": "L6_computer_system_management"
+    },
+    {
+      "id": "L6_computer_system_management",
+      "label": "computer system management",
+      "layer": 6,
+      "content": "",
+      "children": [
+        "L5_computer_usage",
+        "L5_system_maintenance"
+      ],
+      "parent": "day_activity"
+    },
+    {
+      "id": "day_activity",
+      "label": "computer system management",
+      "layer": 7,
+      "content": "",
+      "children": [
+        "L6_computer_system_management"
+      ],
+      "parent": null
+    }
+  ]
+}
