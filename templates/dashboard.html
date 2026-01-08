@@ -82,6 +82,95 @@
             border: 1px solid var(--border);
         }
         
+        /* Date Picker Styles */
+        .date-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .date-nav-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.15s ease;
+        }
+        
+        .date-nav-btn:hover {
+            background: var(--accent-green-dim);
+            border-color: var(--accent-green);
+        }
+        
+        .date-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .date-nav-btn:disabled:hover {
+            background: var(--bg-elevated);
+            border-color: var(--border);
+        }
+        
+        .date-input-wrapper {
+            position: relative;
+        }
+        
+        .date-input {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .date-input:hover {
+            border-color: var(--accent-green);
+        }
+        
+        .date-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px var(--accent-green-dim);
+        }
+        
+        .date-input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        
+        .today-btn {
+            background: var(--accent-green-dim);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .today-btn:hover {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+        }
+        
+        .today-btn.hidden {
+            display: none;
+        }
+        
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -256,6 +345,362 @@
             color: var(--text-secondary);
         }
         
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 0 60px rgba(63, 185, 80, 0.15);
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.15s ease;
+        }
+        
+        .modal-close:hover {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+        }
+        
+        .modal-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .export-dropdown {
+            position: relative;
+        }
+        
+        .export-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+        
+        .export-btn:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+        
+        .export-dropdown-content {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 1001;
+        }
+        
+        .export-dropdown-content.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .export-dropdown-content label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .export-date-input {
+            width: 100%;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        
+        .export-date-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .export-date-input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        
+        .export-download-btn {
+            width: 100%;
+            background: var(--accent-blue);
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+        
+        .export-download-btn:hover {
+            background: #4db8ff;
+        }
+        
+        .modal-body {
+            max-height: calc(80vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        .keystroke-modal-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+            margin-left: 12px;
+        }
+        
+        .keystroke-modal-btn:hover {
+            background: var(--accent-green-dim);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        
+        /* Activity Chart Styles */
+        .activity-chart {
+            padding: 24px;
+            height: 320px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .chart-title .max-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-green);
+        }
+        
+        .chart-svg-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .chart-area {
+            fill: url(#areaGradient);
+        }
+        
+        .chart-line {
+            fill: none;
+            stroke: var(--accent-green);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .chart-dot {
+            fill: var(--accent-green);
+            transition: r 0.15s ease;
+        }
+        
+        .chart-dot:hover {
+            r: 6;
+        }
+        
+        .chart-grid-line {
+            stroke: var(--border);
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+        }
+        
+        .chart-axis-line {
+            stroke: var(--border);
+            stroke-width: 1;
+        }
+        
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 2px;
+        }
+        
+        .chart-label {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            text-align: center;
+            width: 24px;
+        }
+        
+        .chart-label.highlight {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+        
+        .chart-tooltip {
+            position: absolute;
+            background: var(--bg-elevated);
+            border: 1px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 10;
+            white-space: nowrap;
+        }
+        
+        .chart-tooltip.visible {
+            opacity: 1;
+        }
+        
+        .chart-tooltip .tooltip-hour {
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .chart-tooltip .tooltip-value {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+        
+        .chart-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+        
+        .chart-empty .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
         /* App Usage Table */
         .app-table {
             width: 100%;
@@ -373,8 +818,44 @@
                 <div class="logo-icon">⌨️</div>
                 <h1>Activity Tracker</h1>
             </div>
-            <div class="date-badge">{{ today }}</div>
+            <div class="date-picker-container">
+                <button class="date-nav-btn" onclick="changeDate(-1)" title="Previous day">←</button>
+                <input type="date" class="date-input" id="date-picker" 
+                       value="{{ selected_date }}" 
+                       max="{{ today }}"
+                       onchange="goToDate(this.value)">
+                <button class="date-nav-btn" onclick="changeDate(1)" title="Next day" {% if is_today %}disabled{% endif %}>→</button>
+                <button class="today-btn {% if is_today %}hidden{% endif %}" onclick="goToToday()">Today</button>
+                <button class="keystroke-modal-btn" onclick="openKeystrokeModal()">
+                    <span>⌨️</span>
+                    <span>View Keystrokes</span>
+                </button>
+            </div>
         </header>
+        
+        <script>
+            function goToDate(dateStr) {
+                window.location.href = '/?date=' + dateStr;
+            }
+            
+            function goToToday() {
+                window.location.href = '/';
+            }
+            
+            function changeDate(delta) {
+                const datePicker = document.getElementById('date-picker');
+                const currentDate = new Date(datePicker.value);
+                currentDate.setDate(currentDate.getDate() + delta);
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (currentDate <= today) {
+                    const newDateStr = currentDate.toISOString().split('T')[0];
+                    goToDate(newDateStr);
+                }
+            }
+        </script>
         
         <div class="metrics-grid">
             <div class="metric-card">
@@ -408,9 +889,156 @@
         <div class="main-content">
             <div class="section-card">
                 <div class="section-header">
-                    <span class="icon">⌨️</span>
-                    <h2>Keystroke Stream</h2>
+                    <span class="icon">📈</span>
+                    <h2>Activity Timeline</h2>
                 </div>
+                <div class="activity-chart">
+                    {% set hourly_data = hourly_keystrokes_list %}
+                    {% set max_keystrokes = hourly_data | max if hourly_data | max > 0 else 1 %}
+                    {% if hourly_data | sum > 0 %}
+                        <div class="chart-container">
+                            <div class="chart-title">
+                                <span>Keystrokes per hour</span>
+                                <span class="max-value">Peak: {{ '{:,}'.format(max_keystrokes) }}</span>
+                            </div>
+                            <div class="chart-svg-container">
+                                <svg class="chart-svg" viewBox="0 0 720 200" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" style="stop-color: #3fb950; stop-opacity: 0.4" />
+                                            <stop offset="100%" style="stop-color: #3fb950; stop-opacity: 0.05" />
+                                        </linearGradient>
+                                    </defs>
+                                    
+                                    <!-- Grid lines -->
+                                    <line class="chart-grid-line" x1="0" y1="50" x2="720" y2="50" />
+                                    <line class="chart-grid-line" x1="0" y1="100" x2="720" y2="100" />
+                                    <line class="chart-grid-line" x1="0" y1="150" x2="720" y2="150" />
+                                    
+                                    <!-- X axis -->
+                                    <line class="chart-axis-line" x1="0" y1="200" x2="720" y2="200" />
+                                    
+                                    <!-- Area fill -->
+                                    <polygon class="chart-area" points="
+                                        0,200
+                                        {% for val in hourly_data %}
+                                            {{ loop.index0 * 30 }},{{ 200 - (val / max_keystrokes * 180) }}
+                                        {% endfor %}
+                                        690,200
+                                    "/>
+                                    
+                                    <!-- Line -->
+                                    <polyline class="chart-line" points="
+                                        {% for val in hourly_data %}
+                                            {{ loop.index0 * 30 }},{{ 200 - (val / max_keystrokes * 180) }}{% if not loop.last %} {% endif %}
+                                        {% endfor %}
+                                    "/>
+                                    
+                                    <!-- Data points -->
+                                    {% for val in hourly_data %}
+                                        {% if val > 0 %}
+                                            <circle class="chart-dot" 
+                                                    cx="{{ loop.index0 * 30 }}" 
+                                                    cy="{{ 200 - (val / max_keystrokes * 180) }}" 
+                                                    r="4"
+                                                    data-hour="{{ loop.index0 }}"
+                                                    data-value="{{ val }}"
+                                                    onmouseenter="showTooltip(event, {{ loop.index0 }}, {{ val }})"
+                                                    onmouseleave="hideTooltip()"/>
+                                        {% endif %}
+                                    {% endfor %}
+                                </svg>
+                                <div class="chart-tooltip" id="chart-tooltip">
+                                    <div class="tooltip-hour"></div>
+                                    <div class="tooltip-value"></div>
+                                </div>
+                            </div>
+                            <div class="chart-labels">
+                                {% for hour in range(24) %}
+                                    <span class="chart-label {% if most_productive and most_productive['hour'] == hour %}highlight{% endif %}">
+                                        {{ '%02d' | format(hour) }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="chart-empty">
+                            <div class="icon">📈</div>
+                            <p>No activity data for {{ selected_date }}.</p>
+                            {% if is_today %}
+                                <p>Activity will appear as you work!</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <span class="icon">📊</span>
+                    <h2>Top Apps</h2>
+                </div>
+                <div class="app-table">
+                    {% if app_usage %}
+                        {% for app in app_usage %}
+                        <div class="app-row">
+                            <div class="app-name-cell">
+                                <div class="app-icon">{{ app['app_name'][:1] }}</div>
+                                <div class="app-info">
+                                    <div class="name">{{ app['app_name'] }}</div>
+                                    <div class="time">{{ app['minutes_active'] }} min</div>
+                                </div>
+                            </div>
+                            <span class="stat-pill keys">{{ '{:,}'.format(app['total_keystrokes']) }}</span>
+                            <span class="stat-pill clicks">{{ '{:,}'.format(app['total_clicks']) }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="icon">📊</div>
+                            <p>No app usage data for {{ selected_date }}.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="refresh-hint">
+            <span>🔄</span>
+            {% if is_today %}
+                <span>Refresh page to see latest data • Activity logged every minute</span>
+            {% else %}
+                <span>Viewing historical data for {{ selected_date }}</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Keystroke Stream Modal -->
+    <div class="modal-overlay" id="keystroke-modal" onclick="closeModalOnBackdrop(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2><span>⌨️</span> Keystroke Stream</h2>
+                <div class="modal-header-actions">
+                    <div class="export-dropdown">
+                        <button class="export-btn" onclick="toggleExportDropdown(event)">
+                            <span>📥</span>
+                            <span>Export</span>
+                        </button>
+                        <div class="export-dropdown-content" id="export-dropdown">
+                            <label>Select date to export:</label>
+                            <input type="date" class="export-date-input" id="export-date" 
+                                   value="{{ selected_date }}" 
+                                   max="{{ today }}">
+                            <button class="export-download-btn" onclick="downloadExport()">
+                                <span>⬇️</span>
+                                <span>Download TXT</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="modal-close" onclick="closeKeystrokeModal()">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
                 <div class="keystroke-stream">
                     {% if recent_keystrokes %}
                         {% set current_app = namespace(value='') %}
@@ -445,47 +1073,106 @@
                     {% else %}
                         <div class="empty-state">
                             <div class="icon">⌨️</div>
-                            <p>No keystrokes logged yet today.</p>
-                            <p>Start typing and they'll appear here!</p>
+                            <p>No keystrokes logged for {{ selected_date }}.</p>
+                            {% if is_today %}
+                                <p>Start typing and they'll appear here!</p>
+                            {% else %}
+                                <p>No activity was recorded on this date.</p>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
             </div>
-            
-            <div class="section-card">
-                <div class="section-header">
-                    <span class="icon">📊</span>
-                    <h2>Top Apps</h2>
-                </div>
-                <div class="app-table">
-                    {% if app_usage %}
-                        {% for app in app_usage %}
-                        <div class="app-row">
-                            <div class="app-name-cell">
-                                <div class="app-icon">{{ app['app_name'][:1] }}</div>
-                                <div class="app-info">
-                                    <div class="name">{{ app['app_name'] }}</div>
-                                    <div class="time">{{ app['minutes_active'] }} min</div>
-                                </div>
-                            </div>
-                            <span class="stat-pill keys">{{ '{:,}'.format(app['total_keystrokes']) }}</span>
-                            <span class="stat-pill clicks">{{ '{:,}'.format(app['total_clicks']) }}</span>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">
-                            <div class="icon">📊</div>
-                            <p>No app usage data yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="refresh-hint">
-            <span>🔄</span>
-            <span>Refresh page to see latest data • Activity logged every minute</span>
         </div>
     </div>
+    
+    <script>
+        // Modal functions
+        function openKeystrokeModal() {
+            document.getElementById('keystroke-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeKeystrokeModal() {
+            document.getElementById('keystroke-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        function closeModalOnBackdrop(event) {
+            if (event.target === event.currentTarget) {
+                closeKeystrokeModal();
+            }
+        }
+        
+        // Export dropdown functions
+        function toggleExportDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('export-dropdown');
+            dropdown.classList.toggle('active');
+        }
+        
+        function closeExportDropdown() {
+            document.getElementById('export-dropdown').classList.remove('active');
+        }
+        
+        function downloadExport() {
+            const dateInput = document.getElementById('export-date');
+            const selectedDate = dateInput.value;
+            
+            if (!selectedDate) {
+                alert('Please select a date');
+                return;
+            }
+            
+            // Trigger download via API
+            window.location.href = '/api/export-keystrokes?date=' + selectedDate;
+            closeExportDropdown();
+        }
+        
+        // Close export dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('export-dropdown');
+            const exportBtn = e.target.closest('.export-btn');
+            if (!exportBtn && dropdown && !dropdown.contains(e.target)) {
+                closeExportDropdown();
+            }
+        });
+        
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeKeystrokeModal();
+                closeExportDropdown();
+            }
+        });
+        
+        // Chart tooltip functions
+        function showTooltip(event, hour, value) {
+            const tooltip = document.getElementById('chart-tooltip');
+            const rect = event.target.getBoundingClientRect();
+            const container = event.target.closest('.chart-svg-container').getBoundingClientRect();
+            
+            tooltip.querySelector('.tooltip-hour').textContent = hour.toString().padStart(2, '0') + ':00';
+            tooltip.querySelector('.tooltip-value').textContent = value.toLocaleString() + ' keystrokes';
+            tooltip.classList.add('visible');
+            
+            // Position tooltip
+            const tooltipRect = tooltip.getBoundingClientRect();
+            let left = rect.left - container.left + rect.width / 2 - tooltipRect.width / 2;
+            let top = rect.top - container.top - tooltipRect.height - 10;
+            
+            // Keep tooltip within bounds
+            if (left < 0) left = 0;
+            if (left + tooltipRect.width > container.width) left = container.width - tooltipRect.width;
+            if (top < 0) top = rect.bottom - container.top + 10;
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+        }
+        
+        function hideTooltip() {
+            document.getElementById('chart-tooltip').classList.remove('visible');
+        }
+    </script>
 </body>
 </html>
