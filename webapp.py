@@ -236,9 +236,9 @@ def export_keystrokes():
         headers={'Content-Disposition': f'attachment; filename="{filename}"'}
     )
 
-@app.route('/activity-tree')
+@app.route('/activity-graph')
 def activity_tree():
-    """Activity Tree page for generating and viewing refined keystroke text."""
+    """Activity Graph page for generating and viewing refined keystroke text."""
     # Get date from query parameter, default to today
     date_str = request.args.get('date')
     if date_str:
@@ -380,9 +380,9 @@ def generate_refined_text():
         'filename': filename
     })
 
-@app.route('/api/generate-activity-tree', methods=['POST'])
+@app.route('/api/generate-activity-graph', methods=['POST'])
 def generate_activity_tree():
-    """Generate activity tree from refined text and save to data folder."""
+    """Generate activity graph from refined text and save to data folder."""
     data = request.get_json()
     date_str = data.get('date')
     
@@ -406,11 +406,11 @@ def generate_activity_tree():
         return jsonify({'error': f'Refined text file not found for {date_str}. Please generate refined text first.'}), 404
     
     try:
-        # Build the activity tree
+        # Build the activity graph
         nodes = build_activity_tree(refined_filepath)
         
         if not nodes:
-            return jsonify({'error': 'Failed to build activity tree. No activities found.'}), 500
+            return jsonify({'error': 'Failed to build activity graph. No activities found.'}), 500
         
         # Convert to JSON-serializable dict (with full content for API)
         tree_data = tree_to_dict(nodes, truncate_content=False)
@@ -429,7 +429,47 @@ def generate_activity_tree():
         })
         
     except Exception as e:
-        return jsonify({'error': f'Failed to generate activity tree: {str(e)}'}), 500
+        return jsonify({'error': f'Failed to generate activity graph: {str(e)}'}), 500
+
+@app.route('/api/weekly-activity')
+def weekly_activity():
+    """Get hourly keystroke data for the last 7 days."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Calculate date range (last 7 days including today)
+    today = date.today()
+    start_date = today - timedelta(days=6)  # 7 days total (today + 6 previous days)
+    
+    # Get hourly activity for last 7 days
+    weekly_data = cursor.execute('''
+        SELECT DATE(timestamp) as date, hour, SUM(keystrokes) as total_keystrokes
+        FROM activity_log
+        WHERE DATE(timestamp) >= ? AND DATE(timestamp) <= ?
+        GROUP BY DATE(timestamp), hour
+        ORDER BY date DESC, hour ASC
+    ''', (start_date.isoformat(), today.isoformat())).fetchall()
+    
+    conn.close()
+    
+    # Convert to list of dicts
+    data = []
+    max_keystrokes = 0
+    
+    for row in weekly_data:
+        keystrokes = row['total_keystrokes'] or 0
+        data.append({
+            'date': row['date'],
+            'hour': row['hour'],
+            'keystrokes': keystrokes
+        })
+        if keystrokes > max_keystrokes:
+            max_keystrokes = keystrokes
+    
+    return jsonify({
+        'data': data,
+        'max_keystrokes': max_keystrokes
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

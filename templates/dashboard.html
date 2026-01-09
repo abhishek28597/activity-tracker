@@ -268,6 +268,148 @@
             justify-content: center;
         }
         
+        .section-header {
+            justify-content: space-between;
+        }
+        
+        .view-toggle-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            margin-left: auto;
+        }
+        
+        .view-toggle-btn:hover {
+            background: var(--accent-green-dim);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        
+        .chart-view {
+            width: 100%;
+        }
+        
+        /* Heatmap Styles */
+        .heatmap-container {
+            padding: 24px;
+            height: 320px;
+            position: relative;
+        }
+        
+        .heatmap-wrapper {
+            display: flex;
+            gap: 12px;
+            height: calc(100% - 60px);
+        }
+        
+        .heatmap-days {
+            display: flex;
+            flex-direction: column;
+            width: 60px;
+        }
+        
+        .heatmap-day-label {
+            height: 20px;
+            margin-bottom: 4px;
+        }
+        
+        #heatmap-day-labels {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .heatmap-day-label-item {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            height: 32px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .heatmap-grid-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .heatmap-hours {
+            height: 20px;
+        }
+        
+        #heatmap-hour-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 2px;
+        }
+        
+        .heatmap-hour-label {
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            width: 24px;
+            text-align: center;
+        }
+        
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .heatmap-cell {
+            background: rgba(63, 185, 80, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            min-height: 32px;
+        }
+        
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 5;
+            border: 2px solid var(--accent-green);
+            box-shadow: 0 0 8px rgba(63, 185, 80, 0.4);
+        }
+        
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        #header-legend {
+            margin: 0;
+        }
+        
+        .legend-squares {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .legend-square {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        
         /* Keystroke Stream Styles */
         .keystroke-stream {
             height: 480px;
@@ -695,6 +837,12 @@
             margin-bottom: 4px;
         }
         
+        .chart-tooltip .tooltip-date {
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            font-size: 11px;
+        }
+        
         .chart-tooltip .tooltip-value {
             color: var(--accent-green);
             font-weight: 600;
@@ -844,9 +992,9 @@
                     <span>⌨️</span>
                     <span>View Keystrokes</span>
                 </button>
-                <a href="/activity-tree" class="keystroke-modal-btn" style="text-decoration: none; color: inherit;">
-                    <span>🌳</span>
-                    <span>Activity Tree</span>
+                <a href="/activity-graph" class="keystroke-modal-btn" style="text-decoration: none; color: inherit;">
+                    <span>🕸️</span>
+                    <span>Activity Graph</span>
                 </a>
             </div>
         </header>
@@ -907,14 +1055,35 @@
         <div class="main-content">
             <div class="section-card">
                 <div class="section-header">
-                    <span class="icon">📈</span>
-                    <h2>Activity Timeline</h2>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="icon">📈</span>
+                        <h2>Activity Timeline</h2>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div id="header-legend" class="heatmap-legend" style="display: none;">
+                            <span>Less</span>
+                            <div class="legend-squares">
+                                <div class="legend-square" style="background: rgba(63, 185, 80, 0.1);"></div>
+                                <div class="legend-square" style="background: rgba(63, 185, 80, 0.3);"></div>
+                                <div class="legend-square" style="background: rgba(63, 185, 80, 0.5);"></div>
+                                <div class="legend-square" style="background: rgba(63, 185, 80, 0.7);"></div>
+                                <div class="legend-square" style="background: rgba(63, 185, 80, 0.9);"></div>
+                                <div class="legend-square" style="background: #3fb950;"></div>
+                            </div>
+                            <span>More</span>
+                        </div>
+                        <button class="view-toggle-btn" id="view-toggle" onclick="toggleView()">
+                            <span id="view-toggle-text">Weekly View</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="activity-chart">
-                    {% set hourly_data = hourly_keystrokes_list %}
-                    {% set max_keystrokes = hourly_data | max if hourly_data | max > 0 else 1 %}
-                    {% if hourly_data | sum > 0 %}
-                        <div class="chart-container">
+                    <!-- Daily View (Line Chart) -->
+                    <div id="daily-view" class="chart-view">
+                        {% set hourly_data = hourly_keystrokes_list %}
+                        {% set max_keystrokes = hourly_data | max if hourly_data | max > 0 else 1 %}
+                        {% if hourly_data | sum > 0 %}
+                            <div class="chart-container">
                             <div class="chart-title">
                                 <span>Keystrokes per hour</span>
                                 <span class="max-value">Peak: {{ '{:,}'.format(max_keystrokes) }}</span>
@@ -979,15 +1148,43 @@
                                 {% endfor %}
                             </div>
                         </div>
-                    {% else %}
-                        <div class="chart-empty">
-                            <div class="icon">📈</div>
-                            <p>No activity data for {{ selected_date }}.</p>
-                            {% if is_today %}
-                                <p>Activity will appear as you work!</p>
-                            {% endif %}
+                        {% else %}
+                            <div class="chart-empty">
+                                <div class="icon">📈</div>
+                                <p>No activity data for {{ selected_date }}.</p>
+                                {% if is_today %}
+                                    <p>Activity will appear as you work!</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Weekly View (Heatmap) -->
+                    <div id="weekly-view" class="chart-view" style="display: none;">
+                        <div class="heatmap-container">
+                            <div class="chart-title">
+                                <span>Keystrokes per hour (Last 7 days)</span>
+                                <span class="max-value" id="heatmap-max-value">Loading...</span>
+                            </div>
+                            <div class="heatmap-wrapper">
+                                <div class="heatmap-days">
+                                    <div class="heatmap-day-label"></div>
+                                    <div id="heatmap-day-labels"></div>
+                                </div>
+                                <div class="heatmap-grid-container">
+                                    <div class="heatmap-hours">
+                                        <div id="heatmap-hour-labels"></div>
+                                    </div>
+                                    <div id="heatmap-grid" class="heatmap-grid"></div>
+                                </div>
+                            </div>
                         </div>
-                    {% endif %}
+                        <div class="chart-tooltip" id="heatmap-tooltip">
+                            <div class="tooltip-date"></div>
+                            <div class="tooltip-hour"></div>
+                            <div class="tooltip-value"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -1200,6 +1397,170 @@
         
         function hideTooltip() {
             document.getElementById('chart-tooltip').classList.remove('visible');
+        }
+        
+        // Weekly heatmap view functions
+        let weeklyDataCache = null;
+        let isWeeklyView = false;
+        
+        function toggleView() {
+            isWeeklyView = !isWeeklyView;
+            const dailyView = document.getElementById('daily-view');
+            const weeklyView = document.getElementById('weekly-view');
+            const toggleBtn = document.getElementById('view-toggle-text');
+            const headerLegend = document.getElementById('header-legend');
+            
+            if (isWeeklyView) {
+                dailyView.style.display = 'none';
+                weeklyView.style.display = 'block';
+                toggleBtn.textContent = 'Daily View';
+                headerLegend.style.display = 'flex';
+                
+                // Load weekly data if not cached
+                if (!weeklyDataCache) {
+                    loadWeeklyData();
+                } else {
+                    renderHeatmap(weeklyDataCache);
+                }
+            } else {
+                dailyView.style.display = 'block';
+                weeklyView.style.display = 'none';
+                toggleBtn.textContent = 'Weekly View';
+                headerLegend.style.display = 'none';
+            }
+        }
+        
+        function loadWeeklyData() {
+            fetch('/api/weekly-activity')
+                .then(response => response.json())
+                .then(data => {
+                    weeklyDataCache = data;
+                    renderHeatmap(data);
+                })
+                .catch(error => {
+                    console.error('Error loading weekly data:', error);
+                    document.getElementById('heatmap-max-value').textContent = 'Error loading data';
+                });
+        }
+        
+        function renderHeatmap(data) {
+            const { data: weeklyData, max_keystrokes } = data;
+            
+            // Update max value display
+            document.getElementById('heatmap-max-value').textContent = `Peak: ${max_keystrokes.toLocaleString()}`;
+            
+            // Create a map for quick lookup: date_hour -> keystrokes
+            const dataMap = {};
+            weeklyData.forEach(item => {
+                const key = `${item.date}_${item.hour}`;
+                dataMap[key] = item.keystrokes;
+            });
+            
+            // Generate last 7 days (most recent first)
+            const days = [];
+            const today = new Date();
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                days.push(date);
+            }
+            
+            // Render day labels
+            const dayLabelsContainer = document.getElementById('heatmap-day-labels');
+            dayLabelsContainer.innerHTML = '';
+            days.forEach(day => {
+                const dayLabel = document.createElement('div');
+                dayLabel.className = 'heatmap-day-label-item';
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                dayLabel.textContent = `${dayNames[day.getDay()]} ${day.getDate()}`;
+                dayLabelsContainer.appendChild(dayLabel);
+            });
+            
+            // Render hour labels
+            const hourLabelsContainer = document.getElementById('heatmap-hour-labels');
+            hourLabelsContainer.innerHTML = '';
+            for (let hour = 0; hour < 24; hour++) {
+                const hourLabel = document.createElement('div');
+                hourLabel.className = 'heatmap-hour-label';
+                hourLabel.textContent = hour.toString().padStart(2, '0');
+                hourLabelsContainer.appendChild(hourLabel);
+            }
+            
+            // Render heatmap grid
+            const gridContainer = document.getElementById('heatmap-grid');
+            gridContainer.innerHTML = '';
+            
+            days.forEach((day, dayIndex) => {
+                const dateStr = day.toISOString().split('T')[0];
+                
+                for (let hour = 0; hour < 24; hour++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'heatmap-cell';
+                    
+                    const key = `${dateStr}_${hour}`;
+                    const keystrokes = dataMap[key] || 0;
+                    
+                    // Calculate intensity (0 to 1)
+                    const intensity = max_keystrokes > 0 ? keystrokes / max_keystrokes : 0;
+                    
+                    // Map intensity to opacity levels (similar to GitHub)
+                    let opacity = 0.1;
+                    if (intensity > 0.8) opacity = 1.0;
+                    else if (intensity > 0.6) opacity = 0.9;
+                    else if (intensity > 0.4) opacity = 0.7;
+                    else if (intensity > 0.2) opacity = 0.5;
+                    else if (intensity > 0.05) opacity = 0.3;
+                    else if (intensity > 0) opacity = 0.1;
+                    
+                    // For very high values, use darker green
+                    if (intensity >= 0.8) {
+                        cell.style.background = '#2ea043'; // Darker green for max
+                    } else {
+                        cell.style.background = `rgba(63, 185, 80, ${opacity})`;
+                    }
+                    
+                    // Add hover tooltip
+                    cell.addEventListener('mouseenter', (e) => showHeatmapTooltip(e, day, hour, keystrokes));
+                    cell.addEventListener('mouseleave', hideHeatmapTooltip);
+                    
+                    gridContainer.appendChild(cell);
+                }
+            });
+        }
+        
+        function showHeatmapTooltip(event, day, hour, keystrokes) {
+            const tooltip = document.getElementById('heatmap-tooltip');
+            const rect = event.target.getBoundingClientRect();
+            const container = event.target.closest('.heatmap-container').getBoundingClientRect();
+            
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            tooltip.querySelector('.tooltip-date').textContent = 
+                `${dayNames[day.getDay()]}, ${monthNames[day.getMonth()]} ${day.getDate()}`;
+            tooltip.querySelector('.tooltip-hour').textContent = 
+                hour.toString().padStart(2, '0') + ':00';
+            tooltip.querySelector('.tooltip-value').textContent = 
+                keystrokes.toLocaleString() + ' keystrokes';
+            
+            tooltip.classList.add('visible');
+            
+            // Position tooltip
+            const tooltipRect = tooltip.getBoundingClientRect();
+            let left = rect.left - container.left + rect.width / 2 - tooltipRect.width / 2;
+            let top = rect.top - container.top - tooltipRect.height - 10;
+            
+            // Keep tooltip within bounds
+            if (left < 0) left = 0;
+            if (left + tooltipRect.width > container.width) left = container.width - tooltipRect.width;
+            if (top < 0) top = rect.bottom - container.top + 10;
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+        }
+        
+        function hideHeatmapTooltip() {
+            document.getElementById('heatmap-tooltip').classList.remove('visible');
         }
     </script>
 </body>

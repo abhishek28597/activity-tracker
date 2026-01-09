@@ -1,7 +1,7 @@
 """
 Activity Network Builder
 
-Builds a hierarchical activity tree from refined keystroke text by:
+Builds a hierarchical activity graph from refined keystroke text by:
 1. Identifying unique activities (Layer 1) from refined text
 2. Aggregating activities into higher-level concepts (Layer 2, 3, etc.)
 3. Continuing until reaching a single root node (Day's Activity)
@@ -29,7 +29,7 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 @dataclass
 class ActivityNode:
-    """Represents a node in the activity tree."""
+    """Represents a node in the activity graph."""
     id: str
     label: str
     layer: int
@@ -286,7 +286,7 @@ Do not include quotes or any other text."""
 
 def build_activity_tree(file_path: str) -> Dict[str, ActivityNode]:
     """
-    Build hierarchical activity tree from refined text file.
+    Build hierarchical activity graph from refined text file.
     
     Args:
         file_path: Path to refined text file
@@ -481,14 +481,14 @@ Each concept should be mapped to exactly one broader category."""
             nodes[concept_id].parent = day_activity_id
     
     print("\n" + "=" * 60)
-    print("Activity Tree Built Successfully!")
+    print("Activity Graph Built Successfully!")
     print("=" * 60)
     
     return nodes
 
 
 def print_tree_summary(nodes: Dict[str, ActivityNode]):
-    """Print a summary of the activity tree."""
+    """Print a summary of the activity graph."""
     if not nodes:
         print("No nodes to display.")
         return
@@ -521,7 +521,7 @@ def print_tree_summary(nodes: Dict[str, ActivityNode]):
 
 def tree_to_dict(nodes: Dict[str, ActivityNode], truncate_content: bool = True) -> Dict:
     """
-    Convert activity tree nodes to a JSON-serializable dictionary.
+    Convert activity graph nodes to a JSON-serializable dictionary.
     
     Args:
         nodes: Dictionary of ActivityNode objects
@@ -547,7 +547,7 @@ def tree_to_dict(nodes: Dict[str, ActivityNode], truncate_content: bool = True) 
 
 
 def save_tree_json(nodes: Dict[str, ActivityNode], output_path: str):
-    """Save the activity tree to a JSON file."""
+    """Save the activity graph to a JSON file."""
     tree_data = tree_to_dict(nodes, truncate_content=True)
     
     with open(output_path, 'w', encoding='utf-8') as f:
@@ -569,11 +569,11 @@ def main():
         print(f"Error: File not found: {file_path}")
         sys.exit(1)
     
-    # Build the activity tree
+    # Build the activity graph
     nodes = build_activity_tree(file_path)
     
     if not nodes:
-        print("Failed to build activity tree.")
+        print("Failed to build activity graph.")
         sys.exit(1)
     
     # Print summary

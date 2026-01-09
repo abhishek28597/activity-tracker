@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Activity Tree - Activity Tracker</title>
+    <title>Activity Graph - Activity Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
@@ -580,8 +580,8 @@
     <div class="container">
         <header>
             <div class="logo">
-                <div class="logo-icon">🌳</div>
-                <h1>Activity Tree</h1>
+                <div class="logo-icon">🕸️</div>
+                <h1>Activity Graph</h1>
             </div>
             <div class="date-picker-container">
                 <a href="/" class="back-btn">
@@ -639,11 +639,11 @@
                 <div id="error-message" class="error-message hidden"></div>
             </div>
             
-            <!-- Activity Tree Section -->
+            <!-- Activity Graph Section -->
             <div class="card-header" style="margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border);">
                 <h2>
-                    <span>🌳</span>
-                    <span>Generate Activity Tree</span>
+                    <span>🕸️</span>
+                    <span>Generate Activity Graph</span>
                 </h2>
                 <p>Build a hierarchical network graph of your daily activities. Requires refined text to be generated first.</p>
             </div>
@@ -651,22 +651,22 @@
             <div class="action-section">
                 {% if file_exists %}
                 <button class="generate-btn" id="generate-tree-btn" onclick="generateActivityTree()" style="background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);">
-                    <span>🌳</span>
-                    <span>Generate Activity Tree</span>
+                    <span>🕸️</span>
+                    <span>Generate Activity Graph</span>
                 </button>
                 {% else %}
                 <button class="generate-btn" disabled style="background: var(--bg-elevated); opacity: 0.5;">
-                    <span>🌳</span>
-                    <span>Generate Activity Tree (Requires Refined Text)</span>
+                    <span>🕸️</span>
+                    <span>Generate Activity Graph (Requires Refined Text)</span>
                 </button>
                 {% endif %}
                 
                 {% if tree_exists %}
                 <div class="file-status">
                     <div class="file-status-info">
-                        <div class="file-status-icon" style="background: rgba(163, 113, 247, 0.15);">🌳</div>
+                        <div class="file-status-icon" style="background: rgba(163, 113, 247, 0.15);">🕸️</div>
                         <div class="file-status-text">
-                            <div class="label">Activity tree exists</div>
+                            <div class="label">Activity graph exists</div>
                             <div class="filename" style="color: var(--accent-purple);">{{ tree_filename }}</div>
                         </div>
                     </div>
@@ -675,10 +675,10 @@
                 {% else %}
                 <div class="file-status">
                     <div class="file-status-info">
-                        <div class="file-status-icon" style="background: rgba(139, 148, 158, 0.15);">🌳</div>
+                        <div class="file-status-icon" style="background: rgba(139, 148, 158, 0.15);">🕸️</div>
                         <div class="file-status-text">
-                            <div class="label">No activity tree found</div>
-                            <div class="filename" style="color: var(--text-secondary);">Click "Generate Activity Tree" to create one</div>
+                            <div class="label">No activity graph found</div>
+                            <div class="filename" style="color: var(--text-secondary);">Click "Generate Activity Graph" to create one</div>
                         </div>
                     </div>
                 </div>
@@ -712,13 +712,13 @@
         </div>
     </div>
     
-    <!-- Activity Tree Graph Modal -->
+    <!-- Activity Graph Modal -->
     <div class="graph-modal-overlay" id="tree-graph-modal">
         <div class="graph-modal-content">
             <div class="graph-modal-header">
                 <h2>
-                    <span>🌳</span>
-                    <span>Activity Tree Network - {{ selected_date.strftime('%Y-%m-%d') }}</span>
+                    <span>🕸️</span>
+                    <span>Activity Graph Network - {{ selected_date.strftime('%Y-%m-%d') }}</span>
                 </h2>
                 <div class="graph-modal-actions">
                     <button class="graph-control-btn" onclick="resetGraphView()">Reset View</button>
@@ -741,11 +741,11 @@
         let network = null;
         
         function goToDate(dateStr) {
-            window.location.href = '/activity-tree?date=' + dateStr;
+            window.location.href = '/activity-graph?date=' + dateStr;
         }
         
         function goToToday() {
-            window.location.href = '/activity-tree';
+            window.location.href = '/activity-graph';
         }
         
         function changeDate(delta) {
@@ -824,7 +824,7 @@
                 // Reload page to fetch content
                 const datePicker = document.getElementById('date-picker');
                 const selectedDate = datePicker.value;
-                window.location.href = `/activity-tree?date=${selectedDate}&view=true`;
+                window.location.href = `/activity-graph?date=${selectedDate}&view=true`;
                 return;
             }
             
@@ -861,7 +861,7 @@
             }, 100);
         }
         
-        // Activity Tree Functions
+        // Activity Graph Functions
         async function generateActivityTree() {
             const btn = document.getElementById('generate-tree-btn');
             const errorDiv = document.getElementById('tree-error-message');
@@ -879,7 +879,7 @@
             errorDiv.classList.add('hidden');
             
             try {
-                const response = await fetch('/api/generate-activity-tree', {
+                const response = await fetch('/api/generate-activity-graph', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -890,7 +890,7 @@
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to generate activity tree');
+                    throw new Error(data.error || 'Failed to generate activity graph');
                 }
                 
                 // Store tree data
@@ -919,7 +919,7 @@
                 // Try to reload tree data
                 const datePicker = document.getElementById('date-picker');
                 const selectedDate = datePicker.value;
-                window.location.href = `/activity-tree?date=${selectedDate}&viewTree=true`;
+                window.location.href = `/activity-graph?date=${selectedDate}&viewTree=true`;
                 return;
             }
             
