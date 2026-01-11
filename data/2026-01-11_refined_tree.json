@@ -1,0 +1,196 @@
+{
+  "nodes": [
+    {
+      "id": "L1_Terminal",
+      "label": "Terminal",
+      "layer": 1,
+      "content": "11 Jan 2026 at 2:42 PM\nDocument everything in a file named model_readme.md. I might ask follow-up questions based on the document and the model.py if I have any doubts.\n\n11 Jan 2026 at 3:04 PM\nTerminal\n\n11 Jan 2026 at 3:04 PM\nTerminal\n\n11 Jan 2026 at 3:13 PM\nTerminal",
+      "children": [],
+      "parent": "L2_model_documentation"
+    },
+    {
+      "id": "L2_model_documentation",
+      "label": "model documentation",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Terminal"
+      ],
+      "parent": "L3_machine_learning_development"
+    },
+    {
+      "id": "L2_terminal_activity",
+      "label": "terminal activity",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Terminal"
+      ],
+      "parent": "L3_terminal_and_command_line"
+    },
+    {
+      "id": "L2_code_review",
+      "label": "code review",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Terminal",
+        "L1_Code_Editor"
+      ],
+      "parent": "L3_code_review_and_refinement"
+    },
+    {
+      "id": "L1_Google_Chrome",
+      "label": "Google Chrome",
+      "layer": 1,
+      "content": "11 Jan 2026 at 2:46 PM\nYou surely are joking, Mr. Feynman.\n\n11 Jan 2026 at 3:04 PM\nClaude\n\n11 Jan 2026 at 3:04 PM\nGoogle Chrome\n\n11 Jan 2026 at 3:04 PM\nI want you to write a Claude. I want you to write a very simple training script using PyTorch (you can use attention packages, causal) that can consume a txt file and do normal pre-training, like next token prediction. Train a decoder-only model that can do this.\nThe transformer has to be a very small transformer - I just have txt files of a few characters. Keep the code very simple and neat, and understandable, like how Karpathy writes code. I want to understand why you would write a custom class for attention - you can also use the inbuilt PyTorch package for attention, right?\n\n11 Jan 2026 at 3:13 PM\nGive me the final neat code for the training using PyTorch's inbuilt attention package. It should also have inference code - if I want to run inference on the trained model. Keep the code very neat and simple.\n\n11 Jan 2026 at 3:19 PM\nGoogle Chrome\n\n11 Jan 2026 at 3:27 PM\nGoogle Chrome",
+      "children": [],
+      "parent": "L2_pytorch_development"
+    },
+    {
+      "id": "L2_pytorch_development",
+      "label": "pytorch development",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Google_Chrome"
+      ],
+      "parent": "L3_machine_learning_development"
+    },
+    {
+      "id": "L2_transformer_modeling",
+      "label": "transformer modeling",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Google_Chrome"
+      ],
+      "parent": "L3_machine_learning_development"
+    },
+    {
+      "id": "L2_code_requests",
+      "label": "code requests",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Google_Chrome"
+      ],
+      "parent": "L3_code_review_and_refinement"
+    },
+    {
+      "id": "L1_Code_Editor",
+      "label": "Code Editor",
+      "layer": 1,
+      "content": "11 Jan 2026 at 2:49 PM\nI am not able to understand this statement - can you explain what this LayerNorm does with an example?\nAlso, this - what does this mean and why is it important?\nExplain the entire thing simply. What is the role of learnable parameters here? What does it learn if it just had to get the mean and normalize?\n\n11 Jan 2026 at 3:18 PM\nI noticed the export as txt functionality - it kinda misses out some activities, i.e., some times when I open the terminal and then Chrome, it is visible in keystrokes but the export as txt loses it. Can you look into why that happens in the existing code?\n\n11 Jan 2026 at 3:21 PM\nOkay, implement this fix. Actually, don't need to aggregate at any 30-minute interval level - keep it as is, you are displaying on the UI screen. It just needs to export to a txt file - just remove the aggregation logic by 30-minute time interval or so. Refine.\n\n11 Jan 2026 at 3:27 PM\nThis API that generates and refines - is this a different API? If yes, do include these changes to the first cut raw text generation in that API. The LLM refinement can be as is. Generate refine.",
+      "children": [],
+      "parent": "L2_code_review"
+    },
+    {
+      "id": "L2_api_refinement",
+      "label": "api refinement",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Code_Editor"
+      ],
+      "parent": "L3_code_review_and_refinement"
+    },
+    {
+      "id": "L2_debugging_issues",
+      "label": "debugging issues",
+      "layer": 2,
+      "content": "",
+      "children": [
+        "L1_Code_Editor"
+      ],
+      "parent": "L3_model_debugging_and_testing"
+    },
+    {
+      "id": "L3_machine_learning_development",
+      "label": "machine learning development",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_pytorch_development",
+        "L2_model_documentation",
+        "L2_transformer_modeling"
+      ],
+      "parent": "L4_software_development"
+    },
+    {
+      "id": "L3_code_review_and_refinement",
+      "label": "code review and refinement",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_code_requests",
+        "L2_api_refinement",
+        "L2_code_review"
+      ],
+      "parent": "L4_code_testing_and_refinement"
+    },
+    {
+      "id": "L3_terminal_and_command_line",
+      "label": "terminal and command line",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_terminal_activity"
+      ],
+      "parent": "L4_software_development"
+    },
+    {
+      "id": "L3_model_debugging_and_testing",
+      "label": "model debugging and testing",
+      "layer": 3,
+      "content": "",
+      "children": [
+        "L2_debugging_issues"
+      ],
+      "parent": "L4_code_testing_and_refinement"
+    },
+    {
+      "id": "L4_software_development",
+      "label": "software development",
+      "layer": 4,
+      "content": "",
+      "children": [
+        "L3_machine_learning_development",
+        "L3_terminal_and_command_line"
+      ],
+      "parent": "L5_software_development"
+    },
+    {
+      "id": "L4_code_testing_and_refinement",
+      "label": "code testing and refinement",
+      "layer": 4,
+      "content": "",
+      "children": [
+        "L3_code_review_and_refinement",
+        "L3_model_debugging_and_testing"
+      ],
+      "parent": "L5_software_development"
+    },
+    {
+      "id": "L5_software_development",
+      "label": "software development",
+      "layer": 5,
+      "content": "",
+      "children": [
+        "L4_software_development",
+        "L4_code_testing_and_refinement"
+      ],
+      "parent": "day_activity"
+    },
+    {
+      "id": "day_activity",
+      "label": "software development",
+      "layer": 6,
+      "content": "",
+      "children": [
+        "L5_software_development"
+      ],
+      "parent": null
+    }
+  ]
+}

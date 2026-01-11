@@ -190,36 +190,58 @@ def export_keystrokes():
             headers={'Content-Disposition': f'attachment; filename="{filename}"'}
         )
     
-    # Group keystrokes into 30-minute intervals
-    intervals = {}
-    for ks in keystrokes:
-        ts = datetime.fromisoformat(ks['timestamp'])
-        # Round down to nearest 30 minutes
-        minute_slot = (ts.minute // 30) * 30
-        interval_start = ts.replace(minute=minute_slot, second=0, microsecond=0)
-        interval_key = interval_start.strftime('%Y-%m-%d %H:%M')
-        
-        if interval_key not in intervals:
-            intervals[interval_key] = []
-        intervals[interval_key].append(ks['key_pressed'])
-    
-    # Build the output text
+    # Group keystrokes by app changes (like the UI display)
     output_lines = []
-    for interval_key in sorted(intervals.keys()):
-        keys = intervals[interval_key]
-        reconstructed = reconstruct_text(keys)
+    current_app = None
+    current_keys = []
+    current_timestamp = None
+    
+    for ks in keystrokes:
+        # When app changes, process the previous group
+        if current_app is not None and ks['app_name'] != current_app:
+            # Reconstruct text for previous app group
+            reconstructed = reconstruct_text(current_keys)
+            has_text = reconstructed.strip()
+            
+            # Always include app groups (even if no text, to show app switches)
+            if current_timestamp:
+                ts = datetime.fromisoformat(current_timestamp)
+                formatted_time = ts.strftime('%-d %b %Y at %-I:%M %p')
+                output_lines.append(f"{formatted_time}")
+                output_lines.append(f"[{current_app}]")
+                
+                if has_text:
+                    output_lines.append(reconstructed)
+                else:
+                    output_lines.append("(App switch activity)")
+                output_lines.append("")  # Empty line between groups
+            
+            # Reset for new app
+            current_keys = []
         
-        # Skip if reconstructed text is empty or just whitespace
-        if not reconstructed.strip():
-            continue
+        # Update current app and add key
+        if current_app != ks['app_name']:
+            current_app = ks['app_name']
+            current_timestamp = ks['timestamp']
         
-        # Format the timestamp nicely: "5 Jan 2026 at 1:00 PM"
-        interval_dt = datetime.strptime(interval_key, '%Y-%m-%d %H:%M')
-        formatted_time = interval_dt.strftime('%-d %b %Y at %-I:%M %p')
+        current_keys.append(ks['key_pressed'])
+    
+    # Process the last group
+    if current_app is not None:
+        reconstructed = reconstruct_text(current_keys)
+        has_text = reconstructed.strip()
         
-        output_lines.append(f"{formatted_time}")
-        output_lines.append(reconstructed)
-        output_lines.append("")  # Empty line between intervals
+        if current_timestamp:
+            ts = datetime.fromisoformat(current_timestamp)
+            formatted_time = ts.strftime('%-d %b %Y at %-I:%M %p')
+            output_lines.append(f"{formatted_time}")
+            output_lines.append(f"[{current_app}]")
+            
+            if has_text:
+                output_lines.append(reconstructed)
+            else:
+                output_lines.append("(App switch activity)")
+            output_lines.append("")
     
     content = '\n'.join(output_lines)
     
@@ -324,33 +346,58 @@ def generate_refined_text():
     if not keystrokes:
         return jsonify({'error': f'No keystrokes recorded for {export_date.strftime("%Y-%m-%d")}'}), 404
     
-    # Group keystrokes into 30-minute intervals
-    intervals = {}
-    for ks in keystrokes:
-        ts = datetime.fromisoformat(ks['timestamp'])
-        minute_slot = (ts.minute // 30) * 30
-        interval_start = ts.replace(minute=minute_slot, second=0, microsecond=0)
-        interval_key = interval_start.strftime('%Y-%m-%d %H:%M')
-        
-        if interval_key not in intervals:
-            intervals[interval_key] = []
-        intervals[interval_key].append(ks['key_pressed'])
-    
-    # Build the output text
+    # Group keystrokes by app changes (like the UI display)
     output_lines = []
-    for interval_key in sorted(intervals.keys()):
-        keys = intervals[interval_key]
-        reconstructed = reconstruct_text(keys)
+    current_app = None
+    current_keys = []
+    current_timestamp = None
+    
+    for ks in keystrokes:
+        # When app changes, process the previous group
+        if current_app is not None and ks['app_name'] != current_app:
+            # Reconstruct text for previous app group
+            reconstructed = reconstruct_text(current_keys)
+            has_text = reconstructed.strip()
+            
+            # Always include app groups (even if no text, to show app switches)
+            if current_timestamp:
+                ts = datetime.fromisoformat(current_timestamp)
+                formatted_time = ts.strftime('%-d %b %Y at %-I:%M %p')
+                output_lines.append(f"{formatted_time}")
+                output_lines.append(f"[{current_app}]")
+                
+                if has_text:
+                    output_lines.append(reconstructed)
+                else:
+                    output_lines.append("(App switch activity)")
+                output_lines.append("")  # Empty line between groups
+            
+            # Reset for new app
+            current_keys = []
         
-        if not reconstructed.strip():
-            continue
+        # Update current app and add key
+        if current_app != ks['app_name']:
+            current_app = ks['app_name']
+            current_timestamp = ks['timestamp']
         
-        interval_dt = datetime.strptime(interval_key, '%Y-%m-%d %H:%M')
-        formatted_time = interval_dt.strftime('%-d %b %Y at %-I:%M %p')
+        current_keys.append(ks['key_pressed'])
+    
+    # Process the last group
+    if current_app is not None:
+        reconstructed = reconstruct_text(current_keys)
+        has_text = reconstructed.strip()
         
-        output_lines.append(f"{formatted_time}")
-        output_lines.append(reconstructed)
-        output_lines.append("")
+        if current_timestamp:
+            ts = datetime.fromisoformat(current_timestamp)
+            formatted_time = ts.strftime('%-d %b %Y at %-I:%M %p')
+            output_lines.append(f"{formatted_time}")
+            output_lines.append(f"[{current_app}]")
+            
+            if has_text:
+                output_lines.append(reconstructed)
+            else:
+                output_lines.append("(App switch activity)")
+            output_lines.append("")
     
     content = '\n'.join(output_lines)
     
