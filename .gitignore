@@ -54,3 +54,9 @@ Thumbs.db
 # Logs
 *.log
 
+# ML Model Checkpoints
+*.pt
+*.pth
+*.ckpt
+ml_experiments/models/
+
