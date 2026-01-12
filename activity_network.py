@@ -17,14 +17,25 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from collections import defaultdict
 
-from groq import Groq
 from dotenv import load_dotenv
+from config import (
+    LLM_MODEL_NAME,
+    LLM_TEMPERATURE_CONCEPT_EXTRACTION,
+    LLM_TEMPERATURE_DAY_ACTIVITY,
+    LLM_MAX_TOKENS_CONCEPT,
+    LLM_MAX_TOKENS_AGGREGATE,
+    LLM_MAX_TOKENS_DAY
+)
+from llm_utils import (
+    get_groq_client,
+    parse_json_response,
+    parse_list_response_fallback,
+    call_llm,
+    parse_mapping_response
+)
 
 # Load environment variables
 load_dotenv()
-
-# Initialize Groq client
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 
 @dataclass
@@ -155,31 +166,22 @@ Return ONLY a JSON array of concept strings, nothing else. Example format:
 If you cannot identify meaningful concepts, return an empty array []."""
 
     try:
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5,
-            max_completion_tokens=256,
+        response = call_llm(
+            prompt,
+            temperature=LLM_TEMPERATURE_CONCEPT_EXTRACTION,
+            max_tokens=LLM_MAX_TOKENS_CONCEPT
         )
-        
-        response = completion.choices[0].message.content.strip()
-        
-        # Parse JSON response
-        try:
-            # Handle potential markdown code blocks
-            if response.startswith("```"):
-                response = response.split("```")[1]
-                if response.startswith("json"):
-                    response = response[4:]
-            concepts = json.loads(response)
-            if isinstance(concepts, list):
-                return [str(c).lower().strip() for c in concepts[:4] if c]
-        except json.JSONDecodeError:
-            pass
-        
-        # Fallback: split by newlines or commas
-        concepts = [c.strip().strip('"\'[]') for c in response.replace('\n', ',').split(',')]
-        return [c.lower() for c in concepts if c][:4]
+
+        # Parse JSON response with fallback
+        concepts = parse_json_response(
+            response,
+            fallback_parser=parse_list_response_fallback
+        )
+
+        if isinstance(concepts, list):
+            return [str(c).lower().strip() for c in concepts[:4] if c]
+
+        return parse_list_response_fallback(response)[:4]
         
     except Exception as e:
         print(f"Error extracting concepts for {activity_name}: {e}")
@@ -215,30 +217,22 @@ Return ONLY a JSON array of the {target_count} broader concept strings, nothing 
 ["broader concept one", "broader concept two"]"""
 
     try:
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5,
-            max_completion_tokens=256,
+        response = call_llm(
+            prompt,
+            temperature=LLM_TEMPERATURE_CONCEPT_EXTRACTION,
+            max_tokens=LLM_MAX_TOKENS_AGGREGATE
         )
-        
-        response = completion.choices[0].message.content.strip()
-        
-        # Parse JSON response
-        try:
-            if response.startswith("```"):
-                response = response.split("```")[1]
-                if response.startswith("json"):
-                    response = response[4:]
-            broader = json.loads(response)
-            if isinstance(broader, list):
-                return [str(c).lower().strip() for c in broader if c]
-        except json.JSONDecodeError:
-            pass
-        
-        # Fallback
-        broader = [c.strip().strip('"\'[]') for c in response.replace('\n', ',').split(',')]
-        return [c.lower() for c in broader if c][:target_count]
+
+        # Parse JSON response with fallback
+        broader = parse_json_response(
+            response,
+            fallback_parser=parse_list_response_fallback
+        )
+
+        if isinstance(broader, list):
+            return [str(c).lower().strip() for c in broader if c]
+
+        return parse_list_response_fallback(response)[:target_count]
         
     except Exception as e:
         print(f"Error aggregating activities: {e}")
@@ -269,14 +263,13 @@ Return ONLY a single phrase (3-8 words) that represents the day's overarching ac
 Do not include quotes or any other text."""
 
     try:
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_completion_tokens=64,
+        response = call_llm(
+            prompt,
+            temperature=LLM_TEMPERATURE_DAY_ACTIVITY,
+            max_tokens=LLM_MAX_TOKENS_DAY
         )
-        
-        return completion.choices[0].message.content.strip().strip('"\'').lower()
+
+        return response.strip('"\'').lower()
         
     except Exception as e:
         print(f"Error generating day activity: {e}")
@@ -406,20 +399,13 @@ Return ONLY a JSON object mapping each concept to a broader category. Format:
 Each concept should be mapped to exactly one broader category."""
         
         try:
-            completion = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": mapping_prompt}],
+            response = call_llm(
+                mapping_prompt,
                 temperature=0.3,
-                max_completion_tokens=512,
+                max_tokens=512
             )
-            
-            response = completion.choices[0].message.content.strip()
-            if response.startswith("```"):
-                response = response.split("```")[1]
-                if response.startswith("json"):
-                    response = response[4:]
-            
-            mapping = json.loads(response)
+
+            mapping = parse_mapping_response(response)
             
             # Apply mapping
             for i, concept in enumerate(current_concepts):

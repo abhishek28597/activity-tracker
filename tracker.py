@@ -1,10 +1,16 @@
 import time
-import sqlite3
 from datetime import datetime
 from pynput import keyboard, mouse
 import threading
 import subprocess
 import re
+from config import (
+    DATABASE_PATH,
+    DB_TABLE_ACTIVITY_LOG,
+    DB_TABLE_KEYSTROKE_LOG,
+    ACTIVITY_SAVE_INTERVAL_SECONDS
+)
+from db_utils import get_thread_local_connection, init_database
 
 class ActivityTracker:
     def __init__(self):
@@ -13,31 +19,13 @@ class ActivityTracker:
         self.current_app = ""
         self.last_save = time.time()
         self.keystroke_buffer = []  # Buffer to store individual keystrokes
-        self.init_database()
-        self.start_tracking()
-    
-    def init_database(self):
-        self.conn = sqlite3.connect('activity.db', check_same_thread=False)
+
+        # Initialize database and get thread-local connection
+        self.conn = get_thread_local_connection()
         self.cursor = self.conn.cursor()
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS activity_log (
-                timestamp DATETIME,
-                hour INTEGER,
-                app_name TEXT,
-                keystrokes INTEGER,
-                clicks INTEGER
-            )
-        ''')
-        # New table to store individual keystrokes
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS keystroke_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp DATETIME,
-                key_pressed TEXT,
-                app_name TEXT
-            )
-        ''')
-        self.conn.commit()
+        init_database(self.conn)
+
+        self.start_tracking()
     
     def get_active_app(self):
         try:
@@ -76,7 +64,7 @@ class ActivityTracker:
     
     def save_activity(self):
         while True:
-            time.sleep(60)  # Save every minute
+            time.sleep(ACTIVITY_SAVE_INTERVAL_SECONDS)
             
             current_hour = datetime.now().hour
             
@@ -89,8 +77,8 @@ class ActivityTracker:
                 
                 # Save individual keystrokes from buffer
                 for keystroke in self.keystroke_buffer:
-                    self.cursor.execute('''
-                        INSERT INTO keystroke_log (timestamp, key_pressed, app_name)
+                    self.cursor.execute(f'''
+                        INSERT INTO {DB_TABLE_KEYSTROKE_LOG} (timestamp, key_pressed, app_name)
                         VALUES (?, ?, ?)
                     ''', (keystroke['timestamp'], keystroke['key'], keystroke['app']))
                 
@@ -105,17 +93,17 @@ class ActivityTracker:
                 for app, key_count in app_keystrokes.items():
                     # Give clicks to the main app only
                     clicks = self.mouse_clicks if app == main_app else 0
-                    self.cursor.execute('''
-                        INSERT INTO activity_log 
+                    self.cursor.execute(f'''
+                        INSERT INTO {DB_TABLE_ACTIVITY_LOG}
                         (timestamp, hour, app_name, keystrokes, clicks)
                         VALUES (?, ?, ?, ?, ?)
                     ''', (datetime.now(), current_hour, app, key_count, clicks))
-                
+
                 # If there were clicks but no keystrokes, still log the clicks
                 if not app_keystrokes and self.mouse_clicks > 0:
                     current_app = self.get_active_app()
-                    self.cursor.execute('''
-                        INSERT INTO activity_log 
+                    self.cursor.execute(f'''
+                        INSERT INTO {DB_TABLE_ACTIVITY_LOG}
                         (timestamp, hour, app_name, keystrokes, clicks)
                         VALUES (?, ?, ?, ?, ?)
                     ''', (datetime.now(), current_hour, current_app, 0, self.mouse_clicks))

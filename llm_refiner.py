@@ -6,16 +6,16 @@ structured format with timestamps and app context.
 """
 
 import os
-from groq import Groq
 from dotenv import load_dotenv
+from llm_utils import get_groq_client
+from config import (
+    LLM_MODEL_NAME,
+    LLM_TEMPERATURE_REFINEMENT,
+    LLM_MAX_TOKENS_REFINEMENT
+)
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Initialize the Groq client
-client = Groq(
-    api_key=os.environ.get("GROQ_API_KEY"),
-)
 
 SYSTEM_PROMPT = """You are a text refinement assistant. Your task is to take raw keystroke logs and transform them into clean, readable text.
 
@@ -53,6 +53,7 @@ def refine_text(raw_text: str) -> str:
         return raw_text
     
     try:
+        client = get_groq_client()
         chat_completion = client.chat.completions.create(
             messages=[
                 {
@@ -64,9 +65,9 @@ def refine_text(raw_text: str) -> str:
                     "content": f"Please refine the following raw keystroke log:\n\n{raw_text}"
                 }
             ],
-            model="llama-3.3-70b-versatile",
-            temperature=0.3,  # Lower temperature for more consistent formatting
-            max_tokens=4096,
+            model=LLM_MODEL_NAME,
+            temperature=LLM_TEMPERATURE_REFINEMENT,
+            max_completion_tokens=LLM_MAX_TOKENS_REFINEMENT,
         )
         
         refined = chat_completion.choices[0].message.content
